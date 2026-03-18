@@ -175,9 +175,6 @@ class HistoryManager:
         total = len(self._history)
         successful = sum(1 for e in self._history if e["success"])
 
-        # Get unique apps
-        unique_apps = set(e["app_name"] for e in self._history)
-
         # Most used app
         frequent = self.get_frequent_apps(1)
         most_used = frequent[0]["app_name"] if frequent else None
@@ -186,6 +183,6 @@ class HistoryManager:
             "total_launches": total,
             "successful_launches": successful,
             "failed_launches": total - successful,
-            "unique_apps": len(unique_apps),
+            "unique_apps": len(set(e["app_name"] for e in self._history)),
             "most_used_app": most_used,
         }
