@@ -332,7 +332,7 @@ class AppLauncherGUI:
 
         matches = self.nlp.find_all_matches(extracted, app_names, min_score=40)
 
-        for name, score in matches[:50]:
+        for name, _score in matches[:50]:
             app = self.app_dict.get(name.lower())
             if app:
                 self._add_app_to_tree(app)

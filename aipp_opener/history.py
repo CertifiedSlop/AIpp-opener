@@ -183,6 +183,6 @@ class HistoryManager:
             "total_launches": total,
             "successful_launches": successful,
             "failed_launches": total - successful,
-            "unique_apps": len(set(e["app_name"] for e in self._history)),
+            "unique_apps": len({e["app_name"] for e in self._history}),
             "most_used_app": most_used,
         }
