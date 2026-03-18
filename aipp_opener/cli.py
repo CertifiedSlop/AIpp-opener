@@ -3,6 +3,7 @@
 import argparse
 import sys
 import json
+import logging
 from typing import Optional
 
 from aipp_opener.config import ConfigManager
@@ -18,19 +19,26 @@ from aipp_opener.ai.nlp import NLPProcessor
 from aipp_opener.executor import AppExecutor
 from aipp_opener.voice import VoiceInput
 from aipp_opener.history import HistoryManager
+from aipp_opener.logger_config import LoggerConfig, get_logger
+
+logger = get_logger(__name__)
 
 
 def get_app_detector() -> AppDetector:
     """Get the appropriate app detector for the current system."""
+    logger.debug("Detecting platform for app detector")
     nixos_detector = NixOSAppDetector()
     if nixos_detector.is_available():
+        logger.info("Platform detected: NixOS")
         return nixos_detector
-    
+
     debian_detector = DebianAppDetector()
     if debian_detector.is_available():
+        logger.info("Platform detected: Debian/Ubuntu")
         return debian_detector
-    
+
     # Default to NixOS detector (will still scan common paths)
+    logger.info("Platform not detected, using generic NixOS detector")
     return nixos_detector
 
 
@@ -285,7 +293,7 @@ Examples:
   %(prog)s --suggest browser  - Get suggestions for 'browser'
         """
     )
-    
+
     parser.add_argument(
         "command",
         nargs="?",
@@ -352,14 +360,33 @@ Examples:
         default="<ctrl><alt>space",
         help="Custom keyboard shortcut (default: <ctrl><alt>space)"
     )
+    parser.add_argument(
+        "--setup",
+        action="store_true",
+        help="Run first-time setup wizard"
+    )
+    parser.add_argument(
+        "--log-level",
+        type=str,
+        choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
+        default=None,
+        help="Set logging level"
+    )
 
     args = parser.parse_args()
-    
+
     # Load configuration
     config = ConfigManager()
-    
+
+    # Initialize logging
+    log_level_str = args.log_level or config.get().ai.log_level or "INFO"
+    log_level = getattr(logging, log_level_str.upper(), logging.INFO)
+    LoggerConfig.setup(log_level=log_level)
+    logger.info("AIpp Opener starting (log level: %s)", log_level_str)
+
     # Override provider if specified
     if args.provider:
+        logger.info("Overriding AI provider: %s", args.provider)
         config.update(provider=args.provider)
     
     # Initialize components
@@ -368,7 +395,13 @@ Examples:
     executor = AppExecutor(use_notifications=not args.no_notifications)
     nlp = NLPProcessor()
     history = HistoryManager() if not args.no_history and config.get().history_enabled else None
-    
+
+    # Handle --setup
+    if args.setup:
+        from aipp_opener.setup_wizard import main as setup_main
+        setup_main()
+        return
+
     # Handle --config
     if args.config:
         print("Current configuration:")

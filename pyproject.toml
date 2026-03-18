@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "aipp-opener"
-version = "0.2.0"
+version = "0.3.0-dev"
 description = "AI-powered application launcher for Linux"
 readme = "README.md"
 license = {text = "MIT"}

@@ -6,17 +6,21 @@ from pathlib import Path
 from typing import Optional
 from collections import Counter
 
+from aipp_opener.logger_config import get_logger
+
+logger = get_logger(__name__)
+
 
 class HistoryManager:
     """Manages usage history and provides predictions."""
-    
-    DEFAULT_HISTORY_DIR = Path.home() / ".local" / "share" / "aipp_opener"
+
+    DEFAULT_HISTORY_DIR = Path.home() / ".local" / "state" / "aipp_opener"
     DEFAULT_HISTORY_FILE = DEFAULT_HISTORY_DIR / "history.json"
-    
+
     def __init__(self, history_file: Optional[Path] = None, max_history: int = 1000):
         """
         Initialize the history manager.
-        
+
         Args:
             history_file: Path to history file.
             max_history: Maximum number of history entries to keep.
@@ -24,6 +28,7 @@ class HistoryManager:
         self.history_file = history_file or self.DEFAULT_HISTORY_FILE
         self.max_history = max_history
         self._history: list[dict] = []
+        logger.debug("HistoryManager initialized (file=%s, max=%d)", self.history_file, max_history)
         self._load()
     
     def _load(self) -> None:
@@ -32,16 +37,20 @@ class HistoryManager:
             try:
                 with open(self.history_file, "r") as f:
                     self._history = json.load(f)
-            except (json.JSONDecodeError, Exception):
+                logger.debug("Loaded %d history entries from %s", len(self._history), self.history_file)
+            except (json.JSONDecodeError, Exception) as e:
+                logger.warning("Could not load history file: %s", e)
                 self._history = []
         else:
+            logger.debug("History file does not exist: %s", self.history_file)
             self._history = []
-    
+
     def _save(self) -> None:
         """Save history to file."""
         self.history_file.parent.mkdir(parents=True, exist_ok=True)
         with open(self.history_file, "w") as f:
             json.dump(self._history, f, indent=2)
+        logger.debug("Saved %d history entries to %s", len(self._history), self.history_file)
     
     def record(
         self,
@@ -52,7 +61,7 @@ class HistoryManager:
     ) -> None:
         """
         Record an app launch in history.
-        
+
         Args:
             user_input: The user's original input.
             app_name: The application name.
@@ -66,13 +75,15 @@ class HistoryManager:
             "executable": executable,
             "success": success,
         }
-        
+
         self._history.append(entry)
-        
+        logger.debug("Recorded launch: %s -> %s (success=%s)", user_input, app_name, success)
+
         # Trim history if needed
         if len(self._history) > self.max_history:
             self._history = self._history[-self.max_history:]
-        
+            logger.debug("Trimmed history to %d entries", self.max_history)
+
         self._save()
     
     def get_frequent_apps(self, limit: int = 10) -> list[dict]:
