@@ -45,7 +45,7 @@ def get_app_detector() -> AppDetector:
 def get_ai_provider(config: ConfigManager) -> AIProvider:
     """Get the configured AI provider."""
     ai_config = config.get().ai
-    
+
     if ai_config.provider == "ollama":
         provider = OllamaProvider(
             model=ai_config.model,
@@ -70,7 +70,7 @@ def get_ai_provider(config: ConfigManager) -> AIProvider:
     else:
         # Default to Ollama
         provider = OllamaProvider(model=ai_config.model)
-    
+
     return provider
 
 
@@ -85,7 +85,7 @@ def process_command(
 ) -> str:
     """
     Process a user command and launch the appropriate application.
-    
+
     Args:
         user_input: The user's natural language command.
         detector: App detector instance.
@@ -94,7 +94,7 @@ def process_command(
         nlp: NLP processor instance.
         history: Optional history manager.
         max_suggestions: Maximum number of suggestions.
-        
+
     Returns:
         Result message.
     """
@@ -102,48 +102,48 @@ def process_command(
     installed_apps = detector.detect()
     app_names = [app.name for app in installed_apps]
     app_executables = {app.name: app.executable for app in installed_apps}
-    
+
     # Extract intent using NLP
     extracted = nlp.extract_app_intent(user_input)
-    
+
     # Try to find a direct match using fuzzy matching
     matches = nlp.find_best_match(extracted, app_names, limit=1)
-    
+
     if matches and matches[0][1] >= 80:
         # High confidence match
         app_name = matches[0][0]
         executable = app_executables.get(app_name, app_name)
-        
+
         result = executor.execute(executable)
-        
+
         if history and result.success:
             history.record(user_input, app_name, executable)
-        
+
         return result.message
-    
+
     # Try AI-based extraction if no good match
     if ai_provider.is_available():
         try:
             ai_suggestion = ai_provider.extract_app_name(user_input)
             ai_matches = nlp.find_best_match(ai_suggestion, app_names, limit=1)
-            
+
             if ai_matches and ai_matches[0][1] >= 60:
                 app_name = ai_matches[0][0]
                 executable = app_executables.get(app_name, app_name)
-                
+
                 result = executor.execute(executable)
-                
+
                 if history and result.success:
                     history.record(user_input, app_name, executable)
-                
+
                 return result.message
         except Exception:
             pass  # Fall back to suggestions
-    
+
     # No good match - provide suggestions
     all_matches = nlp.find_all_matches(extracted, app_names, min_score=50)
     suggestions = [m[0] for m in all_matches[:max_suggestions]]
-    
+
     if suggestions:
         suggestion_list = ", ".join(suggestions)
         return f"No exact match found. Did you mean: {suggestion_list}?"
@@ -163,36 +163,36 @@ def interactive_mode(
     print("AIpp Opener - Type 'quit' or 'exit' to stop")
     print("Type 'help' for available commands")
     print()
-    
+
     while True:
         try:
             user_input = input("> ").strip()
         except (EOFError, KeyboardInterrupt):
             print("\nGoodbye!")
             break
-        
+
         if not user_input:
             continue
-        
+
         if user_input.lower() in ("quit", "exit"):
             print("Goodbye!")
             break
-        
+
         if user_input.lower() == "help":
             print_help()
             continue
-        
+
         if user_input.lower() == "stats" and history:
             stats = history.get_stats()
             print(json.dumps(stats, indent=2))
             continue
-        
+
         if user_input.lower() == "frequent" and history:
             frequent = history.get_frequent_apps(10)
             for i, app in enumerate(frequent, 1):
                 print(f"{i}. {app['app_name']} ({app['count']} times)")
             continue
-        
+
         result = process_command(
             user_input,
             detector,
@@ -214,7 +214,7 @@ Available commands:
   launch <app>   - Launch an application
   start <app>    - Start an application
   run <app>      - Run an application
-  
+
   help           - Show this help
   stats          - Show usage statistics
   frequent       - Show frequently used apps
@@ -238,29 +238,29 @@ def voice_mode(
 ) -> None:
     """Run in voice input mode."""
     voice = VoiceInput()
-    
+
     if not voice.is_available():
         print("Voice input is not available. Make sure SpeechRecognition is installed.")
         print("Install with: pip install SpeechRecognition")
         return
-    
+
     print("Voice mode activated. Speak your command.")
     print("Say 'quit' or 'exit' to stop.")
     print()
-    
+
     while True:
         try:
             text = voice.listen_once()
-            
+
             if not text:
                 continue
-            
+
             if text.lower() in ("quit", "exit", "stop"):
                 print("Goodbye!")
                 break
-            
+
             print(f"You said: {text}")
-            
+
             result = process_command(
                 text,
                 detector,
@@ -272,7 +272,7 @@ def voice_mode(
             )
             print(result)
             print()
-            
+
         except KeyboardInterrupt:
             print("\nGoodbye!")
             break
@@ -388,7 +388,7 @@ Examples:
     if args.provider:
         logger.info("Overriding AI provider: %s", args.provider)
         config.update(provider=args.provider)
-    
+
     # Initialize components
     detector = get_app_detector()
     ai_provider = get_ai_provider(config)
@@ -407,7 +407,7 @@ Examples:
         print("Current configuration:")
         print(json.dumps(config.get().model_dump(), indent=2))
         return
-    
+
     # Handle --list-apps
     if args.list_apps:
         apps = detector.detect()
@@ -417,12 +417,12 @@ Examples:
         if len(apps) > 50:
             print(f"  ... and {len(apps) - 50} more")
         return
-    
+
     # Handle --suggest
     if args.suggest:
         apps = detector.detect()
         app_names = [app.name for app in apps]
-        
+
         if ai_provider.is_available():
             try:
                 suggestions = ai_provider.suggest_apps(
@@ -436,14 +436,14 @@ Examples:
                 return
             except Exception:
                 pass
-        
+
         # Fallback to NLP matching
         matches = nlp.find_all_matches(args.suggest, app_names, min_score=40)
         print(f"Suggestions for '{args.suggest}':")
         for i, (name, score) in enumerate(matches[:config.get().max_suggestions], 1):
             print(f"  {i}. {name} (score: {score})")
         return
-    
+
     # Handle --gui
     if args.gui:
         from aipp_opener.gui import main as gui_main
@@ -476,12 +476,12 @@ Examples:
     if args.voice:
         voice_mode(detector, ai_provider, executor, nlp, history, config)
         return
-    
+
     # Handle --interactive or no command
     if args.interactive or not args.command:
         interactive_mode(detector, ai_provider, executor, nlp, history, config)
         return
-    
+
     # Handle single command
     result = process_command(
         args.command,

@@ -35,7 +35,7 @@ APP_CATEGORY_MAP = {
     "vivaldi": AppCategory.BROWSER,
     "epiphany": AppCategory.BROWSER,
     "midori": AppCategory.BROWSER,
-    
+
     # Text Editors
     "gedit": AppCategory.EDITOR,
     "kate": AppCategory.EDITOR,
@@ -48,7 +48,7 @@ APP_CATEGORY_MAP = {
     "emacs": AppCategory.EDITOR,
     "nano": AppCategory.EDITOR,
     "micro": AppCategory.EDITOR,
-    
+
     # IDEs
     "code": AppCategory.IDE,
     "code-insiders": AppCategory.IDE,
@@ -63,7 +63,7 @@ APP_CATEGORY_MAP = {
     "atom": AppCategory.IDE,
     "sublime-text": AppCategory.IDE,
     "cursor": AppCategory.IDE,
-    
+
     # Terminals
     "gnome-terminal": AppCategory.TERMINAL,
     "konsole": AppCategory.TERMINAL,
@@ -77,7 +77,7 @@ APP_CATEGORY_MAP = {
     "tilix": AppCategory.TERMINAL,
     "guake": AppCategory.TERMINAL,
     "yakuake": AppCategory.TERMINAL,
-    
+
     # Media Players
     "vlc": AppCategory.MEDIA,
     "mpv": AppCategory.MEDIA,
@@ -86,7 +86,7 @@ APP_CATEGORY_MAP = {
     "celluloid": AppCategory.MEDIA,
     "dragon": AppCategory.MEDIA,
     "totem": AppCategory.MEDIA,
-    
+
     # Video Editors
     "kdenlive": AppCategory.VIDEO,
     "openshot": AppCategory.VIDEO,
@@ -94,7 +94,7 @@ APP_CATEGORY_MAP = {
     "olive": AppCategory.VIDEO,
     "pitivi": AppCategory.VIDEO,
     "flowblade": AppCategory.VIDEO,
-    
+
     # Audio Players
     "rhythmbox": AppCategory.AUDIO,
     "audacious": AppCategory.AUDIO,
@@ -104,12 +104,12 @@ APP_CATEGORY_MAP = {
     "sayonara": AppCategory.AUDIO,
     "spotify": AppCategory.AUDIO,
     "ncspot": AppCategory.AUDIO,
-    
+
     # Audio Editors
     "audacity": AppCategory.AUDIO,
     "ardour": AppCategory.AUDIO,
     "reaper": AppCategory.AUDIO,
-    
+
     # Graphics
     "gimp": AppCategory.GRAPHICS,
     "inkscape": AppCategory.GRAPHICS,
@@ -125,7 +125,7 @@ APP_CATEGORY_MAP = {
     "blender": AppCategory.GRAPHICS,
     "darktable": AppCategory.GRAPHICS,
     "rawtherapee": AppCategory.GRAPHICS,
-    
+
     # Office
     "libreoffice": AppCategory.OFFICE,
     "writer": AppCategory.OFFICE,
@@ -141,7 +141,7 @@ APP_CATEGORY_MAP = {
     "okular": AppCategory.OFFICE,
     "evince": AppCategory.OFFICE,
     "zathura": AppCategory.OFFICE,
-    
+
     # Communication
     "discord": AppCategory.COMMUNICATION,
     "slack": AppCategory.COMMUNICATION,
@@ -159,7 +159,7 @@ APP_CATEGORY_MAP = {
     "hexchat": AppCategory.COMMUNICATION,
     "weechat": AppCategory.COMMUNICATION,
     "pidgin": AppCategory.COMMUNICATION,
-    
+
     # Games / Launchers
     "steam": AppCategory.GAME,
     "lutris": AppCategory.GAME,
@@ -170,7 +170,7 @@ APP_CATEGORY_MAP = {
     "minecraft": AppCategory.GAME,
     "0ad": AppCategory.GAME,
     "supertuxkart": AppCategory.GAME,
-    
+
     # System
     "nautilus": AppCategory.SYSTEM,
     "dolphin": AppCategory.SYSTEM,
@@ -185,7 +185,7 @@ APP_CATEGORY_MAP = {
     "settings": AppCategory.SYSTEM,
     "gnome-tweaks": AppCategory.SYSTEM,
     "dconf-editor": AppCategory.SYSTEM,
-    
+
     # Development
     "git": AppCategory.DEVELOPMENT,
     "gitk": AppCategory.DEVELOPMENT,
@@ -203,7 +203,7 @@ APP_CATEGORY_MAP = {
     "mysql-workbench": AppCategory.DEVELOPMENT,
     "pgadmin": AppCategory.DEVELOPMENT,
     "dbeaver": AppCategory.DEVELOPMENT,
-    
+
     # Utilities
     "calculator": AppCategory.UTILITY,
     "gnome-calculator": AppCategory.UTILITY,
@@ -259,44 +259,44 @@ class CategorizedApp:
 
 class AppCategorizer:
     """Categorizes applications based on name and metadata."""
-    
+
     def __init__(self):
         self.category_map = APP_CATEGORY_MAP.copy()
-    
+
     def categorize(self, name: str, desktop_categories: Optional[list[str]] = None) -> AppCategory:
         """
         Categorize an application.
-        
+
         Args:
             name: Application name.
             desktop_categories: Categories from .desktop file.
-            
+
         Returns:
             AppCategory for the application.
         """
         name_lower = name.lower()
-        
+
         # Check direct mapping first
         if name_lower in self.category_map:
             return self.category_map[name_lower]
-        
+
         # Check partial matches
         for app_name, category in self.category_map.items():
             if app_name in name_lower or name_lower in app_name:
                 return category
-        
+
         # Try to categorize from desktop categories
         if desktop_categories:
             return self._categorize_from_desktop(desktop_categories)
-        
+
         # Check keywords in name
         for category, keywords in CATEGORY_KEYWORDS.items():
             for keyword in keywords:
                 if keyword in name_lower:
                     return category
-        
+
         return AppCategory.OTHER
-    
+
     def _categorize_from_desktop(self, categories: list[str]) -> AppCategory:
         """Categorize from desktop file categories."""
         category_map = {
@@ -314,13 +314,13 @@ class AppCategorizer:
             "Utility": AppCategory.UTILITY,
             "FileTools": AppCategory.UTILITY,
         }
-        
+
         for cat in categories:
             if cat in category_map:
                 return category_map[cat]
-        
+
         return AppCategory.OTHER
-    
+
     def filter_by_category(
         self,
         apps: list,
@@ -328,11 +328,11 @@ class AppCategorizer:
     ) -> list:
         """
         Filter apps by category.
-        
+
         Args:
             apps: List of AppInfo objects.
             category: Category to filter by.
-            
+
         Returns:
             List of apps in the specified category.
         """
@@ -342,37 +342,37 @@ class AppCategorizer:
             if app_category == category:
                 result.append(app)
         return result
-    
+
     def get_category_counts(self, apps: list) -> dict[AppCategory, int]:
         """
         Get count of apps per category.
-        
+
         Args:
             apps: List of AppInfo objects.
-            
+
         Returns:
             Dict mapping categories to counts.
         """
         counts = {cat: 0 for cat in AppCategory}
-        
+
         for app in apps:
             category = self.categorize(app.name, app.categories)
             counts[category] += 1
-        
+
         return counts
-    
+
     def get_categories_summary(self, apps: list) -> list[dict]:
         """
         Get summary of apps by category.
-        
+
         Args:
             apps: List of AppInfo objects.
-            
+
         Returns:
             List of dicts with category info.
         """
         counts = self.get_category_counts(apps)
-        
+
         result = []
         for category, count in counts.items():
             if count > 0:
@@ -381,7 +381,7 @@ class AppCategorizer:
                     "display_name": category.value.title(),
                     "count": count,
                 })
-        
+
         # Sort by count descending
         result.sort(key=lambda x: x["count"], reverse=True)
         return result

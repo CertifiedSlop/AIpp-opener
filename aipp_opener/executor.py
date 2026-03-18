@@ -35,7 +35,7 @@ class AppExecutor:
         """
         self.use_notifications = use_notifications
         logger.debug("AppExecutor initialized (notifications=%s)", use_notifications)
-    
+
     def execute(
         self,
         executable: str,
@@ -65,12 +65,12 @@ class AppExecutor:
                 executable=executable,
                 message=f"Executable not found: {executable}"
             )
-        
+
         # Build command
         cmd = [exec_path]
         if args:
             cmd.extend(args)
-        
+
         try:
             if background:
                 # Run in background
@@ -153,7 +153,7 @@ class AppExecutor:
                 executable=exec_path or executable,
                 message=f"Error: {str(e)}"
             )
-    
+
     def _find_executable(self, name: str) -> Optional[str]:
         """
         Find the full path to an executable.
@@ -198,7 +198,7 @@ class AppExecutor:
 
         logger.debug("Executable not found: %s", name)
         return None
-    
+
     def _send_notification(self, title: str, message: str) -> None:
         """Send a system notification."""
         logger.debug("Sending notification: %s - %s", title, message)
@@ -219,23 +219,23 @@ class AppExecutor:
                 logger.debug("Notification sent via notify-py")
             except Exception as e:
                 logger.warning("Failed to send notification: %s", e)
-    
+
     def is_executable(self, name: str) -> bool:
         """
         Check if a name refers to an executable.
-        
+
         Args:
             name: The executable name.
-            
+
         Returns:
             True if executable exists.
         """
         return self._find_executable(name) is not None
-    
+
     def list_common_executables(self) -> list[str]:
         """
         List common GUI application executables.
-        
+
         Returns:
             List of executable names found in PATH.
         """
@@ -264,10 +264,10 @@ class AppExecutor:
             # Other
             "obs", "obs-studio", "docker", "postman", "slack",
         ]
-        
+
         found = []
         for app in common_apps:
             if self.is_executable(app):
                 found.append(app)
-        
+
         return found

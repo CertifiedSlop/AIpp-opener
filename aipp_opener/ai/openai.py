@@ -14,7 +14,7 @@ from aipp_opener.ai.base import AIProvider, AIResponse
 
 class OpenAIProvider(AIProvider):
     """AI provider using OpenAI API."""
-    
+
     def __init__(
         self,
         api_key: Optional[str] = None,
@@ -25,17 +25,17 @@ class OpenAIProvider(AIProvider):
         self.model = model
         self.base_url = base_url
         self._client = None
-    
+
     @property
     def name(self) -> str:
         return "openai"
-    
+
     def is_available(self) -> bool:
         """Check if OpenAI is configured."""
         if not OPENAI_AVAILABLE:
             return False
         return self.api_key is not None and len(self.api_key) > 0
-    
+
     def _get_client(self) -> "OpenAI":
         """Get or create the OpenAI client."""
         if self._client is None:
@@ -44,23 +44,23 @@ class OpenAIProvider(AIProvider):
                 kwargs["base_url"] = self.base_url
             self._client = OpenAI(**kwargs)
         return self._client
-    
+
     def chat(self, messages: list[dict], **kwargs) -> AIResponse:
         """Send a chat request to OpenAI."""
         if not self.is_available():
             raise RuntimeError("OpenAI provider is not configured")
-        
+
         client = self._get_client()
         temperature = kwargs.get("temperature", 0.3)
-        
+
         response = client.chat.completions.create(
             model=self.model,
             messages=messages,
             temperature=temperature,
         )
-        
+
         choice = response.choices[0]
-        
+
         return AIResponse(
             text=choice.message.content or "",
             model=self.model,
