@@ -285,7 +285,7 @@ class SetupWizard:
         print(f"  Voice: {'Enabled' if self.config.get().voice_enabled else 'Disabled'}")
         print(f"  Log Level: {ai_config.log_level}")
 
-        print(f"\nConfiguration saved to:")
+        print("\nConfiguration saved to:")
         print(f"  {self.config.config_file}")
 
     def _get_input(
