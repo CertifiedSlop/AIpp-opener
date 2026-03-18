@@ -219,7 +219,7 @@ class QuickLauncher:
             app_names = [app.name for app in apps]
             matches = nlp.find_all_matches(extracted, app_names, min_score=40)
 
-            for name, score in matches[:15]:
+            for name, _score in matches[:15]:
                 app = app_dict.get(name.lower())
                 if app:
                     display = app.display_name or app.name
