@@ -14,11 +14,7 @@ class TestAppInfo(unittest.TestCase):
         """Test creating AppInfo object."""
         from aipp_opener.detectors.base import AppInfo
 
-        app = AppInfo(
-            name="firefox",
-            executable="/usr/bin/firefox",
-            display_name="Firefox Browser"
-        )
+        app = AppInfo(name="firefox", executable="/usr/bin/firefox", display_name="Firefox Browser")
 
         self.assertEqual(app.name, "firefox")
         self.assertEqual(app.executable, "/usr/bin/firefox")
@@ -44,6 +40,7 @@ class TestAppCategories(unittest.TestCase):
 
     def setUp(self):
         from aipp_opener.categories import AppCategorizer
+
         self.categorizer = AppCategorizer()
 
     def test_browser_categorization(self):
@@ -97,6 +94,7 @@ class TestNLPProcessor(unittest.TestCase):
 
     def setUp(self):
         from aipp_opener.ai.nlp import NLPProcessor
+
         self.nlp = NLPProcessor()
 
     def test_extract_app_intent_simple(self):
@@ -150,7 +148,7 @@ class TestConfigManager(unittest.TestCase):
         """Test creating ConfigManager."""
         from aipp_opener.config import ConfigManager
 
-        with tempfile.NamedTemporaryFile(suffix='.json', delete=False) as f:
+        with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
             temp_path = Path(f.name)
 
         try:
@@ -165,7 +163,7 @@ class TestConfigManager(unittest.TestCase):
         """Test updating configuration."""
         from aipp_opener.config import ConfigManager
 
-        with tempfile.NamedTemporaryFile(suffix='.json', delete=False) as f:
+        with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
             temp_path = Path(f.name)
 
         try:
@@ -182,7 +180,7 @@ class TestConfigManager(unittest.TestCase):
         """Test configuration persistence."""
         from aipp_opener.config import ConfigManager
 
-        with tempfile.NamedTemporaryFile(suffix='.json', delete=False) as f:
+        with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
             temp_path = Path(f.name)
 
         try:
@@ -210,7 +208,7 @@ class TestExecutionResult(unittest.TestCase):
             app_name="firefox",
             executable="/usr/bin/firefox",
             message="Launched successfully",
-            pid=12345
+            pid=12345,
         )
 
         self.assertTrue(result.success)
@@ -224,7 +222,7 @@ class TestExecutionResult(unittest.TestCase):
             success=False,
             app_name="nonexistent",
             executable="nonexistent",
-            message="Executable not found"
+            message="Executable not found",
         )
 
         self.assertFalse(result.success)
@@ -236,6 +234,7 @@ class TestAppExecutor(unittest.TestCase):
 
     def setUp(self):
         from aipp_opener.executor import AppExecutor
+
         self.executor = AppExecutor(use_notifications=False)
 
     def test_find_executable(self):

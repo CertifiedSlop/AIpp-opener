@@ -35,9 +35,7 @@ class AppLauncherGUI:
         self.config = ConfigManager()
         self.detector = self._get_detector()
         self.ai_provider = self._get_ai_provider()
-        self.executor = AppExecutor(
-            use_notifications=self.config.get().notifications_enabled
-        )
+        self.executor = AppExecutor(use_notifications=self.config.get().notifications_enabled)
         self.nlp = NLPProcessor()
         self.history = HistoryManager() if self.config.get().history_enabled else None
         self.voice = VoiceInput()
@@ -54,9 +52,9 @@ class AppLauncherGUI:
         self._setup_ui()
 
         # Bind events
-        self.search_entry.bind('<Return>', lambda e: self.launch_selected())
-        self.search_entry.bind('<Down>', lambda e: self._navigate_results(1))
-        self.search_entry.bind('<Up>', lambda e: self._navigate_results(-1))
+        self.search_entry.bind("<Return>", lambda e: self.launch_selected())
+        self.search_entry.bind("<Down>", lambda e: self._navigate_results(1))
+        self.search_entry.bind("<Up>", lambda e: self._navigate_results(-1))
 
         # Focus search on startup
         self.search_entry.focus_set()
@@ -77,8 +75,7 @@ class AppLauncherGUI:
 
         if ai_config.provider == "ollama":
             return OllamaProvider(
-                model=ai_config.model,
-                base_url=ai_config.base_url or "http://localhost:11434"
+                model=ai_config.model, base_url=ai_config.base_url or "http://localhost:11434"
             )
         elif ai_config.provider == "gemini":
             return GeminiProvider(api_key=ai_config.api_key, model=ai_config.model)
@@ -113,17 +110,17 @@ class AppLauncherGUI:
 
         # Try to use a modern theme
         available_themes = style.theme_names()
-        if 'clam' in available_themes:
-            style.theme_use('clam')
-        elif 'alt' in available_themes:
-            style.theme_use('alt')
+        if "clam" in available_themes:
+            style.theme_use("clam")
+        elif "alt" in available_themes:
+            style.theme_use("alt")
 
         # Configure colors
-        style.configure('TFrame', background='#f5f5f5')
-        style.configure('TLabel', background='#f5f5f5', font=('Segoe UI', 10))
-        style.configure('Header.TLabel', font=('Segoe UI', 14, 'bold'))
-        style.configure('TButton', font=('Segoe UI', 10), padding=5)
-        style.configure('Accent.TButton', font=('Segoe UI', 10, 'bold'), padding=5)
+        style.configure("TFrame", background="#f5f5f5")
+        style.configure("TLabel", background="#f5f5f5", font=("Segoe UI", 10))
+        style.configure("Header.TLabel", font=("Segoe UI", 14, "bold"))
+        style.configure("TButton", font=("Segoe UI", 10), padding=5)
+        style.configure("Accent.TButton", font=("Segoe UI", 10, "bold"), padding=5)
 
     def _setup_ui(self) -> None:
         """Setup the user interface."""
@@ -141,19 +138,12 @@ class AppLauncherGUI:
         header_frame.grid(row=0, column=0, sticky="ew", pady=(0, 10))
         header_frame.columnconfigure(0, weight=1)
 
-        title_label = ttk.Label(
-            header_frame,
-            text="🚀 AIpp Opener",
-            style='Header.TLabel'
-        )
+        title_label = ttk.Label(header_frame, text="🚀 AIpp Opener", style="Header.TLabel")
         title_label.grid(row=0, column=0, sticky="w")
 
         # Voice button
         self.voice_btn = ttk.Button(
-            header_frame,
-            text="🎤 Voice",
-            command=self._toggle_voice,
-            width=10
+            header_frame, text="🎤 Voice", command=self._toggle_voice, width=10
         )
         self.voice_btn.grid(row=0, column=1, padx=(10, 0))
 
@@ -166,16 +156,16 @@ class AppLauncherGUI:
 
         self.search_entry = ttk.Entry(
             search_frame,
-            font=('Segoe UI', 14),
+            font=("Segoe UI", 14),
         )
         self.search_entry.grid(row=0, column=0, sticky="ew")
-        self.search_entry.bind('<KeyRelease>', lambda e: self._on_search_change())
+        self.search_entry.bind("<KeyRelease>", lambda e: self._on_search_change())
 
         # Search button
         search_btn = ttk.Button(
             search_frame,
             text="🔍 Search",
-            command=lambda: self._update_suggestions(self.search_entry.get())
+            command=lambda: self._update_suggestions(self.search_entry.get()),
         )
         search_btn.grid(row=0, column=1, padx=(5, 0))
 
@@ -195,21 +185,18 @@ class AppLauncherGUI:
         results_frame.rowconfigure(0, weight=1)
 
         # Treeview for results
-        columns = ('name', 'category', 'path')
+        columns = ("name", "category", "path")
         self.results_tree = ttk.Treeview(
-            results_frame,
-            columns=columns,
-            show='headings',
-            selectmode='browse'
+            results_frame, columns=columns, show="headings", selectmode="browse"
         )
 
-        self.results_tree.heading('name', text='Name')
-        self.results_tree.heading('category', text='Category')
-        self.results_tree.heading('path', text='Path')
+        self.results_tree.heading("name", text="Name")
+        self.results_tree.heading("category", text="Category")
+        self.results_tree.heading("path", text="Path")
 
-        self.results_tree.column('name', width=200, minwidth=150)
-        self.results_tree.column('category', width=100, minwidth=80)
-        self.results_tree.column('path', width=300, minwidth=200)
+        self.results_tree.column("name", width=200, minwidth=150)
+        self.results_tree.column("category", width=100, minwidth=80)
+        self.results_tree.column("path", width=300, minwidth=200)
 
         # Scrollbars
         vsb = ttk.Scrollbar(results_frame, orient="vertical", command=self.results_tree.yview)
@@ -221,8 +208,8 @@ class AppLauncherGUI:
         hsb.grid(row=1, column=0, sticky="ew")
 
         # Bind double-click to launch
-        self.results_tree.bind('<Double-1>', lambda e: self.launch_selected())
-        self.results_tree.bind('<Return>', lambda e: self.launch_selected())
+        self.results_tree.bind("<Double-1>", lambda e: self.launch_selected())
+        self.results_tree.bind("<Return>", lambda e: self.launch_selected())
 
         # Action buttons
         btn_frame = ttk.Frame(main_frame)
@@ -232,38 +219,23 @@ class AppLauncherGUI:
             btn_frame,
             text="🚀 Launch Selected",
             command=self.launch_selected,
-            style='Accent.TButton'
+            style="Accent.TButton",
         )
         launch_btn.pack(side="left", padx=(0, 5))
 
-        fav_btn = ttk.Button(
-            btn_frame,
-            text="⭐ Add to Favorites",
-            command=self.add_to_favorites
-        )
+        fav_btn = ttk.Button(btn_frame, text="⭐ Add to Favorites", command=self.add_to_favorites)
         fav_btn.pack(side="left", padx=(0, 5))
 
-        refresh_btn = ttk.Button(
-            btn_frame,
-            text="🔄 Refresh",
-            command=self.refresh_apps
-        )
+        refresh_btn = ttk.Button(btn_frame, text="🔄 Refresh", command=self.refresh_apps)
         refresh_btn.pack(side="left", padx=(0, 5))
 
-        settings_btn = ttk.Button(
-            btn_frame,
-            text="⚙️ Settings",
-            command=self.show_settings
-        )
+        settings_btn = ttk.Button(btn_frame, text="⚙️ Settings", command=self.show_settings)
         settings_btn.pack(side="right")
 
         # Status bar
         self.status_var = tk.StringVar(value="Ready")
         status_bar = ttk.Label(
-            main_frame,
-            textvariable=self.status_var,
-            relief="sunken",
-            padding=(5, 2)
+            main_frame, textvariable=self.status_var, relief="sunken", padding=(5, 2)
         )
         status_bar.grid(row=5, column=0, sticky="ew", pady=(5, 0))
 
@@ -276,7 +248,7 @@ class AppLauncherGUI:
             label = ttk.Label(
                 self.favorites_frame,
                 text="No favorites yet. Search and add apps!",
-                foreground='gray'
+                foreground="gray",
             )
             label.pack(pady=5)
             return
@@ -292,7 +264,7 @@ class AppLauncherGUI:
                     self.favorites_frame,
                     text=app.display_name or app.name,
                     command=lambda a=app: self.launch_app(a),
-                    width=15
+                    width=15,
                 )
                 btn.grid(row=row, column=col, padx=2, pady=2, sticky="w")
 
@@ -317,7 +289,7 @@ class AppLauncherGUI:
             if self.history:
                 frequent = self.history.get_frequent_apps(20)
                 for freq in frequent:
-                    app = self.app_dict.get(freq['app_name'].lower())
+                    app = self.app_dict.get(freq["app_name"].lower())
                     if app:
                         self._add_app_to_tree(app)
             else:
@@ -342,18 +314,23 @@ class AppLauncherGUI:
     def _add_app_to_tree(self, app) -> None:
         """Add an app to the results tree."""
         category = app.categories[0] if app.categories else "Other"
-        self.results_tree.insert('', 'end', values=(
-            app.display_name or app.name,
-            category,
-            app.executable
-        ), tags=(app.name.lower(),))
+        self.results_tree.insert(
+            "",
+            "end",
+            values=(app.display_name or app.name, category, app.executable),
+            tags=(app.name.lower(),),
+        )
 
     def _navigate_results(self, direction: int) -> None:
         """Navigate through results with keyboard."""
         selected = self.results_tree.selection()
         if selected:
             current = selected[0]
-            next_item = self.results_tree.next(current) if direction > 0 else self.results_tree.prev(current)
+            next_item = (
+                self.results_tree.next(current)
+                if direction > 0
+                else self.results_tree.prev(current)
+            )
             if next_item:
                 self.results_tree.selection_set(next_item)
                 self.results_tree.focus(next_item)
@@ -371,8 +348,8 @@ class AppLauncherGUI:
             return
 
         item = self.results_tree.item(selection[0])
-        app_name = item['values'][0]
-        executable = item['values'][2]
+        app_name = item["values"][0]
+        executable = item["values"][2]
 
         # Find the app object
         app = None
@@ -413,11 +390,13 @@ class AppLauncherGUI:
         """Add selected app to favorites."""
         selection = self.results_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select an application to add to favorites.")
+            messagebox.showwarning(
+                "No Selection", "Please select an application to add to favorites."
+            )
             return
 
         item = self.results_tree.item(selection[0])
-        app_name = item['values'][0]
+        app_name = item["values"][0]
 
         # Find the app key
         for key, app in self.app_dict.items():
@@ -464,7 +443,7 @@ class AppLauncherGUI:
         if not self.voice.is_available():
             messagebox.showerror(
                 "Voice Not Available",
-                "Voice input is not available. Make sure SpeechRecognition is installed."
+                "Voice input is not available. Make sure SpeechRecognition is installed.",
             )
             return
 
@@ -525,7 +504,7 @@ class AppLauncherGUI:
             textvariable=provider_var,
             values=["ollama", "gemini", "openai", "openrouter"],
             state="readonly",
-            width=30
+            width=30,
         )
         provider_combo.grid(row=0, column=1, sticky="ew", pady=5, padx=(10, 0))
 
@@ -552,17 +531,13 @@ class AppLauncherGUI:
 
         notifications_var = tk.BooleanVar(value=self.config.get().notifications_enabled)
         ttk.Checkbutton(
-            general_frame,
-            text="Enable notifications",
-            variable=notifications_var
+            general_frame, text="Enable notifications", variable=notifications_var
         ).grid(row=0, column=0, sticky="w", pady=5)
 
         history_var = tk.BooleanVar(value=self.config.get().history_enabled)
-        ttk.Checkbutton(
-            general_frame,
-            text="Enable history",
-            variable=history_var
-        ).grid(row=1, column=0, sticky="w", pady=5)
+        ttk.Checkbutton(general_frame, text="Enable history", variable=history_var).grid(
+            row=1, column=0, sticky="w", pady=5
+        )
 
         ttk.Label(general_frame, text="Max suggestions:").grid(row=2, column=0, sticky="w", pady=5)
         max_spin = ttk.Spinbox(general_frame, from_=1, to=10, width=5)
@@ -578,7 +553,7 @@ class AppLauncherGUI:
                 base_url=url_entry.get().strip() or None,
                 notifications_enabled=notifications_var.get(),
                 history_enabled=history_var.get(),
-                max_suggestions=int(max_spin.get())
+                max_suggestions=int(max_spin.get()),
             )
             # Reload AI provider
             self.ai_provider = self._get_ai_provider()
@@ -604,7 +579,7 @@ def main():
 
     # Set window icon (if available)
     try:
-        root.iconbitmap(default='')
+        root.iconbitmap(default="")
     except Exception:
         pass
 

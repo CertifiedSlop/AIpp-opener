@@ -9,6 +9,7 @@ try:
     import pystray
     from pystray import Icon, MenuItem, Menu
     from PIL import Image, ImageDraw
+
     PYSTRAY_AVAILABLE = True
 except ImportError:
     PYSTRAY_AVAILABLE = False
@@ -24,16 +25,16 @@ from aipp_opener.history import HistoryManager
 def create_icon_image():
     """Create a simple icon image for the tray."""
     size = (64, 64)
-    image = Image.new('RGBA', size, (0, 0, 0, 0))
+    image = Image.new("RGBA", size, (0, 0, 0, 0))
     draw = ImageDraw.Draw(image)
 
     # Draw a rocket shape (simplified)
     # Body
-    draw.ellipse([16, 16, 48, 48], fill='#4CAF50', outline='#2E7D32', width=2)
+    draw.ellipse([16, 16, 48, 48], fill="#4CAF50", outline="#2E7D32", width=2)
     # Window
-    draw.ellipse([24, 24, 40, 40], fill='#81C784', outline='#2E7D32', width=1)
+    draw.ellipse([24, 24, 40, 40], fill="#81C784", outline="#2E7D32", width=1)
     # Flame
-    draw.polygon([(32, 48), (24, 60), (40, 60)], fill='#FF9800', outline='#F57C00')
+    draw.polygon([(32, 48), (24, 60), (40, 60)], fill="#FF9800", outline="#F57C00")
 
     return image
 
@@ -69,9 +70,9 @@ class TrayApp:
             freq_apps = self.history.get_frequent_apps(5)
             frequent = [
                 MenuItem(
-                    f['app_name'],
-                    lambda _, app=f['app_name']: self._launch_by_name(app),
-                    enabled=True
+                    f["app_name"],
+                    lambda _, app=f["app_name"]: self._launch_by_name(app),
+                    enabled=True,
                 )
                 for f in freq_apps
             ]
@@ -89,7 +90,7 @@ class TrayApp:
             MenuItem("⚙️ Settings", self._show_settings),
             MenuItem("📈 Statistics", self._show_stats),
             Menu.SEPARATOR,
-            MenuItem("❌ Quit", self._quit)
+            MenuItem("❌ Quit", self._quit),
         )
 
     def _launch_by_name(self, name: str):
@@ -124,7 +125,7 @@ class TrayApp:
 
         def update_results(event=None):
             query = entry.get()
-            listbox.delete(0, 'end')
+            listbox.delete(0, "end")
 
             if query:
                 extracted = self.nlp.extract_app_intent(query)
@@ -135,20 +136,20 @@ class TrayApp:
                     app = self.app_dict.get(name.lower())
                     if app:
                         display = app.display_name or app.name
-                        listbox.insert('end', f"{display} ({name})")
+                        listbox.insert("end", f"{display} ({name})")
 
         def on_select(event=None):
             selection = listbox.curselection()
             if selection:
                 item = listbox.get(selection[0])
                 # Extract app name from display
-                name = item.split('(')[1].rstrip(')') if '(' in item else item
+                name = item.split("(")[1].rstrip(")") if "(" in item else item
                 self._launch_by_name(name)
                 self._close_popup()
 
-        entry.bind('<KeyRelease>', update_results)
-        entry.bind('<Return>', on_select)
-        listbox.bind('<Double-Button-1>', on_select)
+        entry.bind("<KeyRelease>", update_results)
+        entry.bind("<Return>", on_select)
+        listbox.bind("<Double-Button-1>", on_select)
 
         ttk.Button(frame, text="Close", command=self._close_popup).pack(pady=(10, 0))
 
@@ -178,31 +179,31 @@ class TrayApp:
         # Insert apps
         for app in sorted(self.apps, key=lambda a: a.display_name or a.name):
             name = app.display_name or app.name
-            text.insert('end', f"{name}\n", (app.name,))
+            text.insert("end", f"{name}\n", (app.name,))
             text.tag_bind(
                 app.name,
-                '<Double-1>',
-                lambda e, a=app: (self._launch_by_name(a.name), self._close_popup())
+                "<Double-1>",
+                lambda e, a=app: (self._launch_by_name(a.name), self._close_popup()),
             )
-            text.tag_config(app.name, foreground='blue', underline=True)
+            text.tag_config(app.name, foreground="blue", underline=True)
 
         def filter_apps(event=None):
             query = filter_entry.get().lower()
-            text.delete('1.0', 'end')
+            text.delete("1.0", "end")
 
             for app in self.apps:
                 name = (app.display_name or app.name).lower()
                 if query in name or query in app.name.lower():
                     display = app.display_name or app.name
-                    text.insert('end', f"{display}\n", (app.name,))
+                    text.insert("end", f"{display}\n", (app.name,))
                     text.tag_bind(
                         app.name,
-                        '<Double-1>',
-                        lambda e, a=app: (self._launch_by_name(a.name), self._close_popup())
+                        "<Double-1>",
+                        lambda e, a=app: (self._launch_by_name(a.name), self._close_popup()),
                     )
-                    text.tag_config(app.name, foreground='blue', underline=True)
+                    text.tag_config(app.name, foreground="blue", underline=True)
 
-        filter_entry.bind('<KeyRelease>', filter_apps)
+        filter_entry.bind("<KeyRelease>", filter_apps)
 
         ttk.Button(frame, text="Close", command=self._close_popup).pack(pady=(10, 0))
 
@@ -233,8 +234,7 @@ class TrayApp:
 
         def save():
             self.config.update(
-                notifications_enabled=notif_var.get(),
-                history_enabled=hist_var.get()
+                notifications_enabled=notif_var.get(), history_enabled=hist_var.get()
             )
             self.executor = AppExecutor(use_notifications=notif_var.get())
             if hist_var.get() and not self.history:
@@ -258,7 +258,9 @@ class TrayApp:
             text = tk.Text(frame, width=50, height=15)
             text.pack(fill="both", expand=True, padx=10, pady=10)
 
-            text.insert('1.0', f"""
+            text.insert(
+                "1.0",
+                f"""
 Usage Statistics
 ================
 
@@ -269,12 +271,13 @@ Unique Apps: {stats['unique_apps']}
 Most Used: {stats['most_used_app'] or 'N/A'}
 
 Frequent Apps:
-""")
+""",
+            )
 
             for i, app in enumerate(self.history.get_frequent_apps(10), 1):
-                text.insert('end', f"  {i}. {app['app_name']}: {app['count']} times\n")
+                text.insert("end", f"  {i}. {app['app_name']}: {app['count']} times\n")
 
-            text.config(state='disabled')
+            text.config(state="disabled")
         else:
             ttk.Label(frame, text="History is disabled").pack(pady=20)
 
@@ -322,12 +325,7 @@ Frequent Apps:
 
         image = create_icon_image()
 
-        self.icon = Icon(
-            "aipp-opener",
-            image,
-            "AIpp Opener",
-            self._create_menu()
-        )
+        self.icon = Icon("aipp-opener", image, "AIpp Opener", self._create_menu())
 
         self.icon.run()
 
@@ -344,19 +342,16 @@ Frequent Apps:
         ttk.Label(
             status,
             "AIpp Opener\n\nSystem tray not available.\nUse --gui for full interface.",
-            justify="center"
+            justify="center",
         ).pack(expand=True)
 
-        ttk.Button(status, text="Open GUI", command=lambda: (
-            status.destroy(),
-            root.destroy(),
-            self._launch_gui()
-        )).pack(pady=10)
+        ttk.Button(
+            status,
+            text="Open GUI",
+            command=lambda: (status.destroy(), root.destroy(), self._launch_gui()),
+        ).pack(pady=10)
 
-        ttk.Button(status, text="Quit", command=lambda: (
-            status.destroy(),
-            root.destroy()
-        )).pack()
+        ttk.Button(status, text="Quit", command=lambda: (status.destroy(), root.destroy())).pack()
 
         status.protocol("WM_DELETE_WINDOW", lambda: (status.destroy(), root.destroy()))
         root.mainloop()
@@ -364,6 +359,7 @@ Frequent Apps:
     def _launch_gui(self):
         """Launch the GUI."""
         from aipp_opener.gui import main as gui_main
+
         gui_main()
 
 
