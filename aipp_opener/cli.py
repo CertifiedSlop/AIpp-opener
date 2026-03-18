@@ -1,25 +1,25 @@
 """CLI interface for AIpp Opener."""
 
 import argparse
-import sys
 import json
 import logging
+import sys
 from typing import Optional
 
-from aipp_opener.config import ConfigManager
-from aipp_opener.detectors.nixos import NixOSAppDetector
-from aipp_opener.detectors.debian import DebianAppDetector
-from aipp_opener.detectors.base import AppDetector
-from aipp_opener.ai.ollama import OllamaProvider
+from aipp_opener.ai.base import AIProvider
 from aipp_opener.ai.gemini import GeminiProvider
+from aipp_opener.ai.nlp import NLPProcessor
+from aipp_opener.ai.ollama import OllamaProvider
 from aipp_opener.ai.openai import OpenAIProvider
 from aipp_opener.ai.openrouter import OpenRouterProvider
-from aipp_opener.ai.base import AIProvider
-from aipp_opener.ai.nlp import NLPProcessor
+from aipp_opener.detectors.base import AppDetector
+from aipp_opener.detectors.debian import DebianAppDetector
+from aipp_opener.detectors.nixos import NixOSAppDetector
 from aipp_opener.executor import AppExecutor
-from aipp_opener.voice import VoiceInput
 from aipp_opener.history import HistoryManager
 from aipp_opener.logger_config import LoggerConfig, get_logger
+from aipp_opener.config import ConfigManager
+from aipp_opener.voice import VoiceInput
 
 logger = get_logger(__name__)
 

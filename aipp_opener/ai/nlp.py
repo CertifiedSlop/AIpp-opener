@@ -1,7 +1,7 @@
 """NLP utilities for natural language processing."""
 
-from typing import Optional
 from fuzzywuzzy import fuzz, process
+from typing import Optional
 
 
 class NLPProcessor:
