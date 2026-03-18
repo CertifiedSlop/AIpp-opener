@@ -131,7 +131,7 @@ class TrayApp:
                 app_names = [app.name for app in self.apps]
                 matches = self.nlp.find_all_matches(extracted, app_names, min_score=40)
 
-                for name, score in matches[:20]:
+                for name, _score in matches[:20]:
                     app = self.app_dict.get(name.lower())
                     if app:
                         display = app.display_name or app.name
