@@ -353,7 +353,7 @@ class AppCategorizer:
         Returns:
             Dict mapping categories to counts.
         """
-        counts = {cat: 0 for cat in AppCategory}
+        counts = dict.fromkeys(AppCategory, 0)
 
         for app in apps:
             category = self.categorize(app.name, app.categories)

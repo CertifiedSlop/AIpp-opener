@@ -279,7 +279,7 @@ class SetupWizard:
         if ai_config.base_url:
             print(f"  URL: {ai_config.base_url}")
 
-        print(f"\nFeatures:")
+        print("\nFeatures:")
         print(f"  Notifications: {'Enabled' if self.config.get().notifications_enabled else 'Disabled'}")
         print(f"  History: {'Enabled' if self.config.get().history_enabled else 'Disabled'}")
         print(f"  Voice: {'Enabled' if self.config.get().voice_enabled else 'Disabled'}")
