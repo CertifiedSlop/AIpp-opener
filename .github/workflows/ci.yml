@@ -48,7 +48,7 @@ jobs:
 
     - name: Type check with Mypy
       run: |
-        mypy aipp_opener/ --ignore-missing-imports --disallow-untyped-defs=false --warn-return-any --warn-unused-configs
+        mypy aipp_opener/ --ignore-missing-imports --warn-return-any --warn-unused-configs
 
     - name: Run tests with pytest
       run: |
