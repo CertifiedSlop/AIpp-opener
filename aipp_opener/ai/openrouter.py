@@ -5,6 +5,7 @@ from typing import Optional
 
 try:
     from openai import OpenAI
+
     OPENAI_AVAILABLE = True
 except ImportError:
     OPENAI_AVAILABLE = False
@@ -60,7 +61,7 @@ class OpenRouterProvider(AIProvider):
             extra_headers={
                 "HTTP-Referer": "https://github.com/aipp-opener",
                 "X-Title": "AIpp Opener",
-            }
+            },
         )
 
         choice = response.choices[0]
@@ -73,7 +74,7 @@ class OpenRouterProvider(AIProvider):
                 "completion_tokens": response.usage.completion_tokens if response.usage else 0,
                 "total_tokens": response.usage.total_tokens if response.usage else 0,
             },
-            raw_response=response.model_dump()
+            raw_response=response.model_dump(),
         )
 
     def list_available_models(self) -> list[str]:

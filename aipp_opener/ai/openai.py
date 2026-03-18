@@ -5,6 +5,7 @@ from typing import Optional
 
 try:
     from openai import OpenAI
+
     OPENAI_AVAILABLE = True
 except ImportError:
     OPENAI_AVAILABLE = False
@@ -69,5 +70,5 @@ class OpenAIProvider(AIProvider):
                 "completion_tokens": response.usage.completion_tokens if response.usage else 0,
                 "total_tokens": response.usage.total_tokens if response.usage else 0,
             },
-            raw_response=response.model_dump()
+            raw_response=response.model_dump(),
         )

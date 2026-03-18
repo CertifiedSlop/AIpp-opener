@@ -30,10 +30,24 @@ class NLPProcessor:
 
         # Common action verbs to remove
         action_words = [
-            "open", "launch", "start", "run", "execute", "show",
-            "bring up", "fire up", "kick off", "activate",
-            "please", "can you", "could you", "would you",
-            "i want to", "i need to", "let me", "let's",
+            "open",
+            "launch",
+            "start",
+            "run",
+            "execute",
+            "show",
+            "bring up",
+            "fire up",
+            "kick off",
+            "activate",
+            "please",
+            "can you",
+            "could you",
+            "would you",
+            "i want to",
+            "i need to",
+            "let me",
+            "let's",
         ]
 
         # Remove action words
@@ -49,24 +63,29 @@ class NLPProcessor:
         if len(words) > 1:
             # Look for common app patterns
             app_patterns = [
-                "code", "studio", "editor", "terminal", "browser",
-                "player", "viewer", "manager", "settings", "config",
+                "code",
+                "studio",
+                "editor",
+                "terminal",
+                "browser",
+                "player",
+                "viewer",
+                "manager",
+                "settings",
+                "config",
             ]
             for pattern in app_patterns:
                 if pattern in words:
                     # Return the phrase including the pattern
                     idx = words.index(pattern)
                     if idx > 0:
-                        return " ".join(words[idx-1:idx+1])
-                    return " ".join(words[:idx+1])
+                        return " ".join(words[idx - 1 : idx + 1])
+                    return " ".join(words[: idx + 1])
 
         return result if result else user_input
 
     def find_best_match(
-        self,
-        query: str,
-        candidates: list[str],
-        limit: int = 1
+        self, query: str, candidates: list[str], limit: int = 1
     ) -> list[tuple[str, int]]:
         """
         Find the best fuzzy matches for a query.
@@ -92,22 +111,14 @@ class NLPProcessor:
             return exact_matches[:limit]
 
         # Use fuzzy matching
-        matches = process.extract(
-            query,
-            candidates,
-            scorer=fuzz.WRatio,
-            limit=limit
-        )
+        matches = process.extract(query, candidates, scorer=fuzz.WRatio, limit=limit)
 
         # Filter by threshold
         filtered = [(m[0], m[1]) for m in matches if m[1] >= self.threshold]
         return filtered
 
     def find_all_matches(
-        self,
-        query: str,
-        candidates: list[str],
-        min_score: Optional[int] = None
+        self, query: str, candidates: list[str], min_score: Optional[int] = None
     ) -> list[tuple[str, int]]:
         """
         Find all matches above a threshold.
@@ -139,12 +150,7 @@ class NLPProcessor:
             return matches
 
         # Use fuzzy matching
-        all_matches = process.extract(
-            query,
-            candidates,
-            scorer=fuzz.WRatio,
-            limit=len(candidates)
-        )
+        all_matches = process.extract(query, candidates, scorer=fuzz.WRatio, limit=len(candidates))
 
         return [(m[0], m[1]) for m in all_matches if m[1] >= threshold]
 

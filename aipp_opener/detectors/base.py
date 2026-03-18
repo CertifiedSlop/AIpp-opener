@@ -73,4 +73,8 @@ class AppDetector(ABC):
         """
         apps = self.detect()
         name_lower = name.lower()
-        return [app for app in apps if name_lower in app.name.lower() or name_lower in app.display_name.lower()]
+        return [
+            app
+            for app in apps
+            if name_lower in app.name.lower() or name_lower in app.display_name.lower()
+        ]

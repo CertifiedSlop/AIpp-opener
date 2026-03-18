@@ -63,7 +63,7 @@ class AppExecutor:
                 success=False,
                 app_name=executable,
                 executable=executable,
-                message=f"Executable not found: {executable}"
+                message=f"Executable not found: {executable}",
             )
 
         # Build command
@@ -92,17 +92,12 @@ class AppExecutor:
                     app_name=executable,
                     executable=exec_path,
                     message=f"Launched {executable} (PID: {pid})",
-                    pid=pid
+                    pid=pid,
                 )
             else:
                 # Run in foreground
                 logger.debug("Running %s in foreground", executable)
-                result = subprocess.run(
-                    cmd,
-                    capture_output=True,
-                    text=True,
-                    timeout=60
-                )
+                result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
 
                 if result.returncode == 0:
                     logger.info("Foreground execution of %s succeeded", executable)
@@ -110,7 +105,7 @@ class AppExecutor:
                         success=True,
                         app_name=executable,
                         executable=exec_path,
-                        message=result.stdout or f"Executed {executable}"
+                        message=result.stdout or f"Executed {executable}",
                     )
                 else:
                     logger.error("Foreground execution of %s failed: %s", executable, result.stderr)
@@ -118,7 +113,7 @@ class AppExecutor:
                         success=False,
                         app_name=executable,
                         executable=exec_path,
-                        message=result.stderr or f"Command failed with code {result.returncode}"
+                        message=result.stderr or f"Command failed with code {result.returncode}",
                     )
 
         except subprocess.TimeoutExpired:
@@ -127,7 +122,7 @@ class AppExecutor:
                 success=False,
                 app_name=executable,
                 executable=exec_path,
-                message="Command timed out"
+                message="Command timed out",
             )
         except FileNotFoundError:
             logger.error("Executable not found: %s", executable)
@@ -135,7 +130,7 @@ class AppExecutor:
                 success=False,
                 app_name=executable,
                 executable=exec_path or executable,
-                message=f"Executable not found: {executable}"
+                message=f"Executable not found: {executable}",
             )
         except PermissionError:
             logger.error("Permission denied: %s", executable)
@@ -143,7 +138,7 @@ class AppExecutor:
                 success=False,
                 app_name=executable,
                 executable=exec_path or executable,
-                message=f"Permission denied: {executable}"
+                message=f"Permission denied: {executable}",
             )
         except Exception as e:
             logger.exception("Unexpected error executing %s: %s", executable, e)
@@ -151,7 +146,7 @@ class AppExecutor:
                 success=False,
                 app_name=executable,
                 executable=exec_path or executable,
-                message=f"Error: {str(e)}"
+                message=f"Error: {str(e)}",
             )
 
     def _find_executable(self, name: str) -> Optional[str]:
@@ -204,17 +199,14 @@ class AppExecutor:
         logger.debug("Sending notification: %s - %s", title, message)
         try:
             # Try notify-send (Linux)
-            subprocess.run(
-                ["notify-send", title, message],
-                capture_output=True,
-                timeout=5
-            )
+            subprocess.run(["notify-send", title, message], capture_output=True, timeout=5)
             logger.debug("Notification sent via notify-send")
         except (subprocess.SubprocessError, FileNotFoundError) as e:
             logger.debug("notify-send not available: %s", e)
             try:
                 # Try using notify-py as fallback
                 from notify_py import notify
+
                 notify(title=title, content=message)
                 logger.debug("Notification sent via notify-py")
             except Exception as e:
@@ -241,28 +233,76 @@ class AppExecutor:
         """
         common_apps = [
             # Browsers
-            "firefox", "chrome", "chromium", "brave", "opera", "vivaldi",
+            "firefox",
+            "chrome",
+            "chromium",
+            "brave",
+            "opera",
+            "vivaldi",
             # Editors/IDEs
-            "code", "code-insiders", "sublime-text", "atom", "gedit", "kate",
-            "vim", "nvim", "emacs", "nano",
+            "code",
+            "code-insiders",
+            "sublime-text",
+            "atom",
+            "gedit",
+            "kate",
+            "vim",
+            "nvim",
+            "emacs",
+            "nano",
             # Terminal
-            "gnome-terminal", "konsole", "alacritty", "kitty", "wezterm", "foot",
+            "gnome-terminal",
+            "konsole",
+            "alacritty",
+            "kitty",
+            "wezterm",
+            "foot",
             # Media
-            "vlc", "mpv", "rhythmbox", "spotify", "audacious",
+            "vlc",
+            "mpv",
+            "rhythmbox",
+            "spotify",
+            "audacious",
             # Office
-            "libreoffice", "writer", "calc", "impress", "evolution", "thunderbird",
+            "libreoffice",
+            "writer",
+            "calc",
+            "impress",
+            "evolution",
+            "thunderbird",
             # Graphics
-            "gimp", "inkscape", "eog", "krita", "blender",
+            "gimp",
+            "inkscape",
+            "eog",
+            "krita",
+            "blender",
             # Communication
-            "discord", "slack", "zoom", "teams", "telegram-desktop", "signal-desktop",
+            "discord",
+            "slack",
+            "zoom",
+            "teams",
+            "telegram-desktop",
+            "signal-desktop",
             # File managers
-            "nautilus", "dolphin", "thunar", "pcmanfm", "ranger",
+            "nautilus",
+            "dolphin",
+            "thunar",
+            "pcmanfm",
+            "ranger",
             # System
-            "settings", "gnome-control-center", "systemsettings",
+            "settings",
+            "gnome-control-center",
+            "systemsettings",
             # Games/Launchers
-            "steam", "lutris", "heroic",
+            "steam",
+            "lutris",
+            "heroic",
             # Other
-            "obs", "obs-studio", "docker", "postman", "slack",
+            "obs",
+            "obs-studio",
+            "docker",
+            "postman",
+            "slack",
         ]
 
         found = []

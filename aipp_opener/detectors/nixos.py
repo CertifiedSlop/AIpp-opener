@@ -21,20 +21,15 @@ class NixOSAppDetector(AppDetector):
         """Check if running on NixOS."""
         # Check for NixOS-specific files/commands
         return (
-            Path("/run/current-system").exists() or
-            Path("/nix/var/nix/profiles").exists() or
-            self._nix_command_available()
+            Path("/run/current-system").exists()
+            or Path("/nix/var/nix/profiles").exists()
+            or self._nix_command_available()
         )
 
     def _nix_command_available(self) -> bool:
         """Check if nix command is available."""
         try:
-            result = subprocess.run(
-                ["nix", "--version"],
-                capture_output=True,
-                text=True,
-                timeout=5
-            )
+            result = subprocess.run(["nix", "--version"], capture_output=True, text=True, timeout=5)
             return result.returncode == 0
         except (subprocess.SubprocessError, FileNotFoundError):
             return False
@@ -110,10 +105,7 @@ class NixOSAppDetector(AppDetector):
         try:
             # Query installed packages
             result = subprocess.run(
-                ["nix-store", "-q", "--installed"],
-                capture_output=True,
-                text=True,
-                timeout=30
+                ["nix-store", "-q", "--installed"], capture_output=True, text=True, timeout=30
             )
 
             if result.returncode == 0:
@@ -162,8 +154,21 @@ class NixOSAppDetector(AppDetector):
             return None
 
         # Skip if it's a common system utility without GUI
-        skip_names = {"sh", "bash", "python", "python3", "perl", "ruby", "node",
-                      "npm", "nix", "git", "ssh", "scp", "rsync"}
+        skip_names = {
+            "sh",
+            "bash",
+            "python",
+            "python3",
+            "perl",
+            "ruby",
+            "node",
+            "npm",
+            "nix",
+            "git",
+            "ssh",
+            "scp",
+            "rsync",
+        }
         if name in skip_names:
             return None
 
@@ -188,7 +193,7 @@ class NixOSAppDetector(AppDetector):
             executable=str(executable),
             display_name=display_name or name.title(),
             description=description,
-            categories=categories
+            categories=categories,
         )
 
     def _find_desktop_file(self, app_name: str) -> Optional[Path]:

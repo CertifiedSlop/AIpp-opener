@@ -142,10 +142,7 @@ class SetupWizard:
         print("Get your API key at: https://openrouter.ai/keys\n")
 
         api_key = self._get_input("OpenRouter API key", password=True)
-        model = self._get_input(
-            "Model name",
-            default="meta-llama/llama-3-8b-instruct"
-        )
+        model = self._get_input("Model name", default="meta-llama/llama-3-8b-instruct")
 
         self.config.update(provider="openrouter", model=model, api_key=api_key)
         logger.info("Configured OpenRouter provider (model=%s)", model)
@@ -190,28 +187,19 @@ class SetupWizard:
         # Notifications
         current = self.config.get().notifications_enabled
         default = "y" if current else "n"
-        choice = self._get_input(
-            "Enable system notifications",
-            default=default
-        )
+        choice = self._get_input("Enable system notifications", default=default)
         self.config.update(notifications_enabled=choice.lower() == "y")
 
         # History
         current = self.config.get().history_enabled
         default = "y" if current else "n"
-        choice = self._get_input(
-            "Enable usage history (for predictions)",
-            default=default
-        )
+        choice = self._get_input("Enable usage history (for predictions)", default=default)
         self.config.update(history_enabled=choice.lower() == "y")
 
         # Voice
         current = self.config.get().voice_enabled
         default = "y" if current else "n"
-        choice = self._get_input(
-            "Enable voice input (requires microphone)",
-            default=default
-        )
+        choice = self._get_input("Enable voice input (requires microphone)", default=default)
         self.config.update(voice_enabled=choice.lower() == "y")
 
         # Log level
@@ -231,7 +219,7 @@ class SetupWizard:
             self.config.get().notifications_enabled,
             self.config.get().history_enabled,
             self.config.get().voice_enabled,
-            log_level
+            log_level,
         )
 
     def _test_app_detection(self) -> None:
@@ -280,7 +268,9 @@ class SetupWizard:
             print(f"  URL: {ai_config.base_url}")
 
         print("\nFeatures:")
-        print(f"  Notifications: {'Enabled' if self.config.get().notifications_enabled else 'Disabled'}")
+        print(
+            f"  Notifications: {'Enabled' if self.config.get().notifications_enabled else 'Disabled'}"
+        )
         print(f"  History: {'Enabled' if self.config.get().history_enabled else 'Disabled'}")
         print(f"  Voice: {'Enabled' if self.config.get().voice_enabled else 'Disabled'}")
         print(f"  Log Level: {ai_config.log_level}")
@@ -288,12 +278,7 @@ class SetupWizard:
         print("\nConfiguration saved to:")
         print(f"  {self.config.config_file}")
 
-    def _get_input(
-        self,
-        prompt: str,
-        default: str = "",
-        password: bool = False
-    ) -> str:
+    def _get_input(self, prompt: str, default: str = "", password: bool = False) -> str:
         """Get user input with optional default."""
         if default:
             prompt = f"{prompt} [{default}]"
@@ -302,6 +287,7 @@ class SetupWizard:
         try:
             if password:
                 import getpass
+
                 value = getpass.getpass(prompt)
             else:
                 value = input(prompt)

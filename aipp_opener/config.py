@@ -15,10 +15,14 @@ logger = get_logger(__name__)
 class AIProviderConfig(BaseModel):
     """Configuration for AI provider."""
 
-    provider: str = Field(default="ollama", description="AI provider: ollama, gemini, openai, openrouter")
+    provider: str = Field(
+        default="ollama", description="AI provider: ollama, gemini, openai, openrouter"
+    )
     model: str = Field(default="llama3.2", description="Model to use")
     api_key: Optional[str] = Field(default=None, description="API key (not needed for Ollama)")
-    base_url: Optional[str] = Field(default=None, description="Base URL for API (for Ollama: http://localhost:11434)")
+    base_url: Optional[str] = Field(
+        default=None, description="Base URL for API (for Ollama: http://localhost:11434)"
+    )
     temperature: float = Field(default=0.3, ge=0, le=1, description="Temperature for AI responses")
     log_level: str = Field(default="INFO", description="Logging level: DEBUG, INFO, WARNING, ERROR")
 
@@ -30,7 +34,9 @@ class AppConfig(BaseModel):
     voice_enabled: bool = Field(default=False, description="Enable voice input")
     notifications_enabled: bool = Field(default=True, description="Enable system notifications")
     history_enabled: bool = Field(default=True, description="Enable usage history")
-    max_suggestions: int = Field(default=5, ge=1, le=10, description="Maximum number of suggestions")
+    max_suggestions: int = Field(
+        default=5, ge=1, le=10, description="Maximum number of suggestions"
+    )
     default_shell: str = Field(default="bash", description="Default shell for command execution")
 
 

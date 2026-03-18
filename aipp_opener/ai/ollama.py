@@ -26,10 +26,7 @@ class OllamaProvider(AIProvider):
     def is_available(self) -> bool:
         """Check if Ollama is running and the model is available."""
         try:
-            response = requests.get(
-                f"{self.base_url}/api/tags",
-                timeout=5
-            )
+            response = requests.get(f"{self.base_url}/api/tags", timeout=5)
             if response.status_code != 200:
                 return False
 
@@ -37,9 +34,7 @@ class OllamaProvider(AIProvider):
             models = data.get("models", [])
             model_names = [m.get("name", "").split(":")[0] for m in models]
 
-            return self.model in model_names or any(
-                self.model in name for name in model_names
-            )
+            return self.model in model_names or any(self.model in name for name in model_names)
         except (requests.RequestException, ValueError):
             return False
 
@@ -54,14 +49,10 @@ class OllamaProvider(AIProvider):
             "stream": stream,
             "options": {
                 "temperature": temperature,
-            }
+            },
         }
 
-        response = requests.post(
-            f"{self.base_url}/api/chat",
-            json=payload,
-            timeout=self.timeout
-        )
+        response = requests.post(f"{self.base_url}/api/chat", json=payload, timeout=self.timeout)
         response.raise_for_status()
 
         data = response.json()
@@ -75,16 +66,13 @@ class OllamaProvider(AIProvider):
                 "prompt_tokens": data.get("prompt_eval_count", 0),
                 "completion_tokens": data.get("eval_count", 0),
             },
-            raw_response=data
+            raw_response=data,
         )
 
     def list_models(self) -> list[str]:
         """List available models in Ollama."""
         try:
-            response = requests.get(
-                f"{self.base_url}/api/tags",
-                timeout=5
-            )
+            response = requests.get(f"{self.base_url}/api/tags", timeout=5)
             response.raise_for_status()
             data = response.json()
             return [m.get("name", "") for m in data.get("models", [])]

@@ -6,7 +6,6 @@ from pathlib import Path
 from logging.handlers import RotatingFileHandler
 from typing import Optional
 
-
 DEFAULT_LOG_DIR = Path.home() / ".local" / "state" / "aipp_opener"
 DEFAULT_LOG_FILE = DEFAULT_LOG_DIR / "aipp_opener.log"
 DEFAULT_LOG_LEVEL = logging.INFO

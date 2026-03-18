@@ -7,6 +7,7 @@ from typing import Optional
 
 class AppCategory(Enum):
     """Application categories."""
+
     BROWSER = "browser"
     EDITOR = "editor"
     IDE = "ide"
@@ -35,7 +36,6 @@ APP_CATEGORY_MAP = {
     "vivaldi": AppCategory.BROWSER,
     "epiphany": AppCategory.BROWSER,
     "midori": AppCategory.BROWSER,
-
     # Text Editors
     "gedit": AppCategory.EDITOR,
     "kate": AppCategory.EDITOR,
@@ -48,7 +48,6 @@ APP_CATEGORY_MAP = {
     "emacs": AppCategory.EDITOR,
     "nano": AppCategory.EDITOR,
     "micro": AppCategory.EDITOR,
-
     # IDEs
     "code": AppCategory.IDE,
     "code-insiders": AppCategory.IDE,
@@ -63,7 +62,6 @@ APP_CATEGORY_MAP = {
     "atom": AppCategory.IDE,
     "sublime-text": AppCategory.IDE,
     "cursor": AppCategory.IDE,
-
     # Terminals
     "gnome-terminal": AppCategory.TERMINAL,
     "konsole": AppCategory.TERMINAL,
@@ -77,7 +75,6 @@ APP_CATEGORY_MAP = {
     "tilix": AppCategory.TERMINAL,
     "guake": AppCategory.TERMINAL,
     "yakuake": AppCategory.TERMINAL,
-
     # Media Players
     "vlc": AppCategory.MEDIA,
     "mpv": AppCategory.MEDIA,
@@ -86,7 +83,6 @@ APP_CATEGORY_MAP = {
     "celluloid": AppCategory.MEDIA,
     "dragon": AppCategory.MEDIA,
     "totem": AppCategory.MEDIA,
-
     # Video Editors
     "kdenlive": AppCategory.VIDEO,
     "openshot": AppCategory.VIDEO,
@@ -94,7 +90,6 @@ APP_CATEGORY_MAP = {
     "olive": AppCategory.VIDEO,
     "pitivi": AppCategory.VIDEO,
     "flowblade": AppCategory.VIDEO,
-
     # Audio Players
     "rhythmbox": AppCategory.AUDIO,
     "audacious": AppCategory.AUDIO,
@@ -104,12 +99,10 @@ APP_CATEGORY_MAP = {
     "sayonara": AppCategory.AUDIO,
     "spotify": AppCategory.AUDIO,
     "ncspot": AppCategory.AUDIO,
-
     # Audio Editors
     "audacity": AppCategory.AUDIO,
     "ardour": AppCategory.AUDIO,
     "reaper": AppCategory.AUDIO,
-
     # Graphics
     "gimp": AppCategory.GRAPHICS,
     "inkscape": AppCategory.GRAPHICS,
@@ -125,7 +118,6 @@ APP_CATEGORY_MAP = {
     "blender": AppCategory.GRAPHICS,
     "darktable": AppCategory.GRAPHICS,
     "rawtherapee": AppCategory.GRAPHICS,
-
     # Office
     "libreoffice": AppCategory.OFFICE,
     "writer": AppCategory.OFFICE,
@@ -141,7 +133,6 @@ APP_CATEGORY_MAP = {
     "okular": AppCategory.OFFICE,
     "evince": AppCategory.OFFICE,
     "zathura": AppCategory.OFFICE,
-
     # Communication
     "discord": AppCategory.COMMUNICATION,
     "slack": AppCategory.COMMUNICATION,
@@ -159,7 +150,6 @@ APP_CATEGORY_MAP = {
     "hexchat": AppCategory.COMMUNICATION,
     "weechat": AppCategory.COMMUNICATION,
     "pidgin": AppCategory.COMMUNICATION,
-
     # Games / Launchers
     "steam": AppCategory.GAME,
     "lutris": AppCategory.GAME,
@@ -170,7 +160,6 @@ APP_CATEGORY_MAP = {
     "minecraft": AppCategory.GAME,
     "0ad": AppCategory.GAME,
     "supertuxkart": AppCategory.GAME,
-
     # System
     "nautilus": AppCategory.SYSTEM,
     "dolphin": AppCategory.SYSTEM,
@@ -185,7 +174,6 @@ APP_CATEGORY_MAP = {
     "settings": AppCategory.SYSTEM,
     "gnome-tweaks": AppCategory.SYSTEM,
     "dconf-editor": AppCategory.SYSTEM,
-
     # Development
     "git": AppCategory.DEVELOPMENT,
     "gitk": AppCategory.DEVELOPMENT,
@@ -203,7 +191,6 @@ APP_CATEGORY_MAP = {
     "mysql-workbench": AppCategory.DEVELOPMENT,
     "pgadmin": AppCategory.DEVELOPMENT,
     "dbeaver": AppCategory.DEVELOPMENT,
-
     # Utilities
     "calculator": AppCategory.UTILITY,
     "gnome-calculator": AppCategory.UTILITY,
@@ -249,6 +236,7 @@ CATEGORY_KEYWORDS = {
 @dataclass
 class CategorizedApp:
     """Application with category information."""
+
     name: str
     executable: str
     display_name: str
@@ -321,11 +309,7 @@ class AppCategorizer:
 
         return AppCategory.OTHER
 
-    def filter_by_category(
-        self,
-        apps: list,
-        category: AppCategory
-    ) -> list:
+    def filter_by_category(self, apps: list, category: AppCategory) -> list:
         """
         Filter apps by category.
 
@@ -376,11 +360,13 @@ class AppCategorizer:
         result = []
         for category, count in counts.items():
             if count > 0:
-                result.append({
-                    "category": category.value,
-                    "display_name": category.value.title(),
-                    "count": count,
-                })
+                result.append(
+                    {
+                        "category": category.value,
+                        "display_name": category.value.title(),
+                        "count": count,
+                    }
+                )
 
         # Sort by count descending
         result.sort(key=lambda x: x["count"], reverse=True)

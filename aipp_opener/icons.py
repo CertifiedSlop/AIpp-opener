@@ -9,6 +9,7 @@ from dataclasses import dataclass
 @dataclass
 class IconInfo:
     """Icon information for an application."""
+
     path: Optional[str] = None
     name: Optional[str] = None
     mime_type: Optional[str] = None
@@ -103,10 +104,7 @@ class IconFinder:
         return IconInfo()
 
     def _parse_desktop_icon(
-        self,
-        desktop_file: Path,
-        app_name: str,
-        app_executable: str
+        self, desktop_file: Path, app_name: str, app_executable: str
     ) -> Optional[IconInfo]:
         """Parse desktop file for icon information."""
         try:
@@ -132,8 +130,9 @@ class IconFinder:
                 # Check if this desktop file matches
                 if exec_value:
                     exec_name = exec_value.split()[0] if exec_value else ""
-                    if exec_name and (app_name.lower() == exec_name.lower() or
-                                      app_executable.endswith(exec_name)):
+                    if exec_name and (
+                        app_name.lower() == exec_name.lower() or app_executable.endswith(exec_name)
+                    ):
                         if icon_value:
                             return IconInfo(name=icon_value)
         except Exception:
@@ -191,11 +190,7 @@ class IconFinder:
                 # Check pixmaps
                 direct = icon_path / f"{name}{ext}"
                 if direct.exists():
-                    return IconInfo(
-                        path=str(direct),
-                        name=name,
-                        mime_type=self._get_mime_type(ext)
-                    )
+                    return IconInfo(path=str(direct), name=name, mime_type=self._get_mime_type(ext))
 
                 # Check themed
                 for size in self.ICON_SIZES:
@@ -206,9 +201,7 @@ class IconFinder:
 
                     if themed.exists():
                         return IconInfo(
-                            path=str(themed),
-                            name=name,
-                            mime_type=self._get_mime_type(ext)
+                            path=str(themed), name=name, mime_type=self._get_mime_type(ext)
                         )
 
         return IconInfo(name=name)
@@ -239,6 +232,7 @@ class IconFinder:
 
         try:
             import base64
+
             with open(icon_info.path, "rb") as f:
                 return base64.b64encode(f.read()).decode("utf-8")
         except Exception:

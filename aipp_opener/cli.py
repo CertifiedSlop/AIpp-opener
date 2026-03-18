@@ -291,86 +291,44 @@ Examples:
   %(prog)s --interactive      - Interactive mode
   %(prog)s --gui              - Open GUI interface
   %(prog)s --suggest browser  - Get suggestions for 'browser'
-        """
+        """,
     )
 
     parser.add_argument(
-        "command",
-        nargs="?",
-        help="Natural language command (e.g., 'open firefox')"
+        "command", nargs="?", help="Natural language command (e.g., 'open firefox')"
     )
-    parser.add_argument(
-        "-i", "--interactive",
-        action="store_true",
-        help="Run in interactive mode"
-    )
-    parser.add_argument(
-        "-v", "--voice",
-        action="store_true",
-        help="Enable voice input mode"
-    )
-    parser.add_argument(
-        "-s", "--suggest",
-        metavar="QUERY",
-        help="Get app suggestions for a query"
-    )
-    parser.add_argument(
-        "--list-apps",
-        action="store_true",
-        help="List detected applications"
-    )
-    parser.add_argument(
-        "--config",
-        action="store_true",
-        help="Show/edit configuration"
-    )
+    parser.add_argument("-i", "--interactive", action="store_true", help="Run in interactive mode")
+    parser.add_argument("-v", "--voice", action="store_true", help="Enable voice input mode")
+    parser.add_argument("-s", "--suggest", metavar="QUERY", help="Get app suggestions for a query")
+    parser.add_argument("--list-apps", action="store_true", help="List detected applications")
+    parser.add_argument("--config", action="store_true", help="Show/edit configuration")
     parser.add_argument(
         "--provider",
         choices=["ollama", "gemini", "openai", "openrouter"],
-        help="Override AI provider"
+        help="Override AI provider",
     )
     parser.add_argument(
-        "--no-notifications",
-        action="store_true",
-        help="Disable system notifications"
+        "--no-notifications", action="store_true", help="Disable system notifications"
     )
+    parser.add_argument("--no-history", action="store_true", help="Disable usage history")
+    parser.add_argument("--gui", action="store_true", help="Open GUI interface")
+    parser.add_argument("--tray", action="store_true", help="Run in system tray mode")
     parser.add_argument(
-        "--no-history",
-        action="store_true",
-        help="Disable usage history"
-    )
-    parser.add_argument(
-        "--gui",
-        action="store_true",
-        help="Open GUI interface"
-    )
-    parser.add_argument(
-        "--tray",
-        action="store_true",
-        help="Run in system tray mode"
-    )
-    parser.add_argument(
-        "--shortcut",
-        action="store_true",
-        help="Enable global keyboard shortcut (Ctrl+Alt+Space)"
+        "--shortcut", action="store_true", help="Enable global keyboard shortcut (Ctrl+Alt+Space)"
     )
     parser.add_argument(
         "--shortcut-key",
         type=str,
         default="<ctrl><alt>space",
-        help="Custom keyboard shortcut (default: <ctrl><alt>space)"
+        help="Custom keyboard shortcut (default: <ctrl><alt>space)",
     )
-    parser.add_argument(
-        "--setup",
-        action="store_true",
-        help="Run first-time setup wizard"
-    )
+    parser.add_argument("--setup", action="store_true", help="Run first-time setup wizard")
     parser.add_argument(
         "--log-level",
         type=str,
         choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
         default=None,
-        help="Set logging level"
+        help="Set logging level",
     )
 
     args = parser.parse_args()
@@ -399,6 +357,7 @@ Examples:
     # Handle --setup
     if args.setup:
         from aipp_opener.setup_wizard import main as setup_main
+
         setup_main()
         return
 
@@ -426,9 +385,7 @@ Examples:
         if ai_provider.is_available():
             try:
                 suggestions = ai_provider.suggest_apps(
-                    args.suggest,
-                    app_names,
-                    config.get().max_suggestions
+                    args.suggest, app_names, config.get().max_suggestions
                 )
                 print(f"Suggestions for '{args.suggest}':")
                 for i, suggestion in enumerate(suggestions, 1):
@@ -440,31 +397,35 @@ Examples:
         # Fallback to NLP matching
         matches = nlp.find_all_matches(args.suggest, app_names, min_score=40)
         print(f"Suggestions for '{args.suggest}':")
-        for i, (name, score) in enumerate(matches[:config.get().max_suggestions], 1):
+        for i, (name, score) in enumerate(matches[: config.get().max_suggestions], 1):
             print(f"  {i}. {name} (score: {score})")
         return
 
     # Handle --gui
     if args.gui:
         from aipp_opener.gui import main as gui_main
+
         gui_main()
         return
 
     # Handle --tray
     if args.tray:
         from aipp_opener.tray import main as tray_main
+
         tray_main()
         return
 
     # Handle --shortcut
     if args.shortcut:
         from aipp_opener.keyboard import QuickLauncher
+
         launcher = QuickLauncher(shortcut=args.shortcut_key)
         launcher.start()
         print(f"Keyboard shortcut enabled: {args.shortcut_key}")
         print("Press the shortcut to open quick launcher. Press Ctrl+C to exit.")
         try:
             import time
+
             while True:
                 time.sleep(1)
         except KeyboardInterrupt:

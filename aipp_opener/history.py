@@ -37,7 +37,9 @@ class HistoryManager:
             try:
                 with open(self.history_file, "r") as f:
                     self._history = json.load(f)
-                logger.debug("Loaded %d history entries from %s", len(self._history), self.history_file)
+                logger.debug(
+                    "Loaded %d history entries from %s", len(self._history), self.history_file
+                )
             except (json.JSONDecodeError, Exception) as e:
                 logger.warning("Could not load history file: %s", e)
                 self._history = []
@@ -52,13 +54,7 @@ class HistoryManager:
             json.dump(self._history, f, indent=2)
         logger.debug("Saved %d history entries to %s", len(self._history), self.history_file)
 
-    def record(
-        self,
-        user_input: str,
-        app_name: str,
-        executable: str,
-        success: bool = True
-    ) -> None:
+    def record(self, user_input: str, app_name: str, executable: str, success: bool = True) -> None:
         """
         Record an app launch in history.
 
@@ -81,7 +77,7 @@ class HistoryManager:
 
         # Trim history if needed
         if len(self._history) > self.max_history:
-            self._history = self._history[-self.max_history:]
+            self._history = self._history[-self.max_history :]
             logger.debug("Trimmed history to %d entries", self.max_history)
 
         self._save()
@@ -107,11 +103,13 @@ class HistoryManager:
                     executable = entry["executable"]
                     break
 
-            result.append({
-                "app_name": app_name,
-                "executable": executable,
-                "count": count,
-            })
+            result.append(
+                {
+                    "app_name": app_name,
+                    "executable": executable,
+                    "count": count,
+                }
+            )
 
         return result
 

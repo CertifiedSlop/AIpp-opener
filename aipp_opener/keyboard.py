@@ -7,6 +7,7 @@ from typing import Optional, Callable
 
 try:
     from pynput import keyboard
+
     KEYBOARD_AVAILABLE = True
 except ImportError:
     KEYBOARD_AVAILABLE = False
@@ -15,6 +16,7 @@ try:
     import Xlib.display
     import Xlib.ext.xtest
     import Xlib.X
+
     XLIB_AVAILABLE = True
 except ImportError:
     XLIB_AVAILABLE = False
@@ -119,10 +121,7 @@ class KeyboardShortcut:
             if key == keyboard.Key.esc:
                 return False
 
-        self.listener = keyboard.Listener(
-            on_press=on_press,
-            on_release=on_release
-        )
+        self.listener = keyboard.Listener(on_press=on_press, on_release=on_release)
         self.listener.start()
 
     def stop(self) -> None:
@@ -136,11 +135,7 @@ class KeyboardShortcut:
 class QuickLauncher:
     """Quick launcher popup with keyboard shortcut."""
 
-    def __init__(
-        self,
-        shortcut: str = "<ctrl><alt>space",
-        on_launch: Optional[Callable] = None
-    ):
+    def __init__(self, shortcut: str = "<ctrl><alt>space", on_launch: Optional[Callable] = None):
         """
         Initialize quick launcher.
 
@@ -180,7 +175,7 @@ class QuickLauncher:
         self._popup.geometry("500x300")
 
         # Always on top
-        self._popup.attributes('-topmost', True)
+        self._popup.attributes("-topmost", True)
 
         # Center on screen
         self._popup.update_idletasks()
@@ -192,12 +187,12 @@ class QuickLauncher:
         self._popup.overrideredirect(True)
 
         # Search entry
-        entry = ttk.Entry(self._popup, font=('Segoe UI', 14))
+        entry = ttk.Entry(self._popup, font=("Segoe UI", 14))
         entry.pack(fill="x", padx=10, pady=10)
         entry.focus_set()
 
         # Results listbox
-        listbox = tk.Listbox(self._popup, font=('Segoe UI', 11), height=10)
+        listbox = tk.Listbox(self._popup, font=("Segoe UI", 11), height=10)
         listbox.pack(fill="both", expand=True, padx=10, pady=(0, 10))
 
         # Scrollbar
@@ -206,13 +201,13 @@ class QuickLauncher:
         listbox.config(yscrollcommand=scrollbar.set)
 
         def update_results(query: str = ""):
-            listbox.delete(0, 'end')
+            listbox.delete(0, "end")
 
             if not query:
                 # Show frequent apps
                 if history:
                     for freq in history.get_frequent_apps(10):
-                        listbox.insert('end', f"⭐ {freq['app_name']}")
+                        listbox.insert("end", f"⭐ {freq['app_name']}")
                 return
 
             extracted = nlp.extract_app_intent(query)
@@ -223,7 +218,7 @@ class QuickLauncher:
                 app = app_dict.get(name.lower())
                 if app:
                     display = app.display_name or app.name
-                    listbox.insert('end', display)
+                    listbox.insert("end", display)
 
         def launch_selected(event=None):
             selection = listbox.curselection()
@@ -250,11 +245,11 @@ class QuickLauncher:
                 self._popup.destroy()
                 self._popup = None
 
-        entry.bind('<KeyRelease>', lambda e: update_results(entry.get()))
-        entry.bind('<Return>', launch_selected)
-        entry.bind('<Escape>', lambda e: close_popup())
-        listbox.bind('<Double-Button-1>', launch_selected)
-        listbox.bind('<Return>', launch_selected)
+        entry.bind("<KeyRelease>", lambda e: update_results(entry.get()))
+        entry.bind("<Return>", launch_selected)
+        entry.bind("<Escape>", lambda e: close_popup())
+        listbox.bind("<Double-Button-1>", launch_selected)
+        listbox.bind("<Return>", launch_selected)
 
         # Initial display
         update_results()
@@ -263,7 +258,7 @@ class QuickLauncher:
         def on_focus_out(event):
             self._popup.after(200, lambda: close_popup())
 
-        self._popup.bind('<FocusOut>', on_focus_out)
+        self._popup.bind("<FocusOut>", on_focus_out)
 
     def start(self) -> None:
         """Start the quick launcher."""
@@ -289,7 +284,7 @@ def simulate_keypress(keysym: str) -> None:
         window = display.screen().root
 
         # Get keycode for keysym
-        keysym_code = getattr(Xlib.X, f'XK_{keysym}', None)
+        keysym_code = getattr(Xlib.X, f"XK_{keysym}", None)
         if keysym_code is None:
             return
 
@@ -321,6 +316,7 @@ def main():
     # Keep running
     try:
         import time
+
         while True:
             time.sleep(1)
     except KeyboardInterrupt:

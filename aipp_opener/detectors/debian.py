@@ -19,19 +19,13 @@ class DebianAppDetector(AppDetector):
     def is_available(self) -> bool:
         """Check if running on a Debian-based system."""
         # Check for dpkg
-        return (
-            Path("/etc/debian_version").exists() or
-            self._dpkg_available()
-        )
+        return Path("/etc/debian_version").exists() or self._dpkg_available()
 
     def _dpkg_available(self) -> bool:
         """Check if dpkg command is available."""
         try:
             result = subprocess.run(
-                ["dpkg", "--version"],
-                capture_output=True,
-                text=True,
-                timeout=5
+                ["dpkg", "--version"], capture_output=True, text=True, timeout=5
             )
             return result.returncode == 0
         except (subprocess.SubprocessError, FileNotFoundError):
@@ -70,12 +64,7 @@ class DebianAppDetector(AppDetector):
 
         try:
             # Get list of installed packages
-            result = subprocess.run(
-                ["dpkg", "-l"],
-                capture_output=True,
-                text=True,
-                timeout=30
-            )
+            result = subprocess.run(["dpkg", "-l"], capture_output=True, text=True, timeout=30)
 
             if result.returncode == 0:
                 for line in result.stdout.split("\n"):
@@ -104,10 +93,7 @@ class DebianAppDetector(AppDetector):
         try:
             # List files installed by the package
             result = subprocess.run(
-                ["dpkg", "-L", package_name],
-                capture_output=True,
-                text=True,
-                timeout=10
+                ["dpkg", "-L", package_name], capture_output=True, text=True, timeout=10
             )
 
             if result.returncode == 0:
@@ -155,7 +141,7 @@ class DebianAppDetector(AppDetector):
                             executable=exec_path or exec_name,
                             display_name=info.get("Name"),
                             description=info.get("Comment"),
-                            categories=info.get("Categories", [])
+                            categories=info.get("Categories", []),
                         )
                         apps.append(app)
                 except Exception:
@@ -187,12 +173,7 @@ class DebianAppDetector(AppDetector):
     def _find_executable_path(self, exec_name: str) -> Optional[str]:
         """Find the full path to an executable."""
         try:
-            result = subprocess.run(
-                ["which", exec_name],
-                capture_output=True,
-                text=True,
-                timeout=5
-            )
+            result = subprocess.run(["which", exec_name], capture_output=True, text=True, timeout=5)
             if result.returncode == 0 and result.stdout.strip():
                 return result.stdout.strip()
         except (subprocess.SubprocessError, FileNotFoundError):
@@ -206,7 +187,9 @@ class DebianAppDetector(AppDetector):
 
         return None
 
-    def _create_app_from_executable(self, executable: Path, package_name: Optional[str] = None) -> Optional[AppInfo]:
+    def _create_app_from_executable(
+        self, executable: Path, package_name: Optional[str] = None
+    ) -> Optional[AppInfo]:
         """Create an AppInfo from an executable file."""
         name = executable.name
 
@@ -216,9 +199,32 @@ class DebianAppDetector(AppDetector):
             return None
 
         # Skip if it's a common system utility without GUI
-        skip_names = {"sh", "bash", "dash", "python", "python3", "perl", "ruby",
-                      "node", "npm", "npx", "git", "ssh", "scp", "rsync", "grep",
-                      "sed", "awk", "find", "cat", "ls", "cp", "mv", "rm", "mkdir"}
+        skip_names = {
+            "sh",
+            "bash",
+            "dash",
+            "python",
+            "python3",
+            "perl",
+            "ruby",
+            "node",
+            "npm",
+            "npx",
+            "git",
+            "ssh",
+            "scp",
+            "rsync",
+            "grep",
+            "sed",
+            "awk",
+            "find",
+            "cat",
+            "ls",
+            "cp",
+            "mv",
+            "rm",
+            "mkdir",
+        }
         if name in skip_names:
             return None
 
@@ -243,7 +249,7 @@ class DebianAppDetector(AppDetector):
             executable=str(executable),
             display_name=display_name or name.title(),
             description=description,
-            categories=categories
+            categories=categories,
         )
 
     def _find_desktop_file(self, app_name: str) -> Optional[Path]:

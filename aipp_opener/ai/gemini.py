@@ -5,6 +5,7 @@ from typing import Optional
 
 try:
     import google.generativeai as genai
+
     GEMINI_AVAILABLE = True
 except ImportError:
     GEMINI_AVAILABLE = False
@@ -68,14 +69,9 @@ class GeminiProvider(AIProvider):
 
         # Generate response
         response = client.generate_content(
-            prompt,
-            generation_config=genai.types.GenerationConfig(
-                temperature=temperature
-            )
+            prompt, generation_config=genai.types.GenerationConfig(temperature=temperature)
         )
 
         return AIResponse(
-            text=response.text,
-            model=self.model,
-            raw_response={"text": response.text}
+            text=response.text, model=self.model, raw_response={"text": response.text}
         )

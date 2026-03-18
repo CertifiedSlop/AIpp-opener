@@ -92,7 +92,9 @@ Examples:
         response = self.complete(user_input, system_prompt=system_prompt)
         return response.strip().lower()
 
-    def suggest_apps(self, user_input: str, available_apps: list[str], max_suggestions: int = 5) -> list[str]:
+    def suggest_apps(
+        self, user_input: str, available_apps: list[str], max_suggestions: int = 5
+    ) -> list[str]:
         """
         Suggest applications based on user input.
 

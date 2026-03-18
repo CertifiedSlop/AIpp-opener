@@ -5,6 +5,7 @@ from typing import Optional, Callable
 
 try:
     import speech_recognition as sr
+
     VOICE_AVAILABLE = True
 except ImportError:
     VOICE_AVAILABLE = False
@@ -91,7 +92,7 @@ class VoiceInput:
     def listen_continuous(
         self,
         callback: Callable[[str], None],
-        on_error: Optional[Callable[[Exception], None]] = None
+        on_error: Optional[Callable[[Exception], None]] = None,
     ) -> None:
         """
         Start continuous listening in a background thread.
