@@ -414,6 +414,14 @@ Contributions are welcome!
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
+## 📚 Documentation
+
+- **[CONTRIBUTING.md](CONTRIBUTING.md)** - Contribution guidelines, development setup, code style, and testing instructions
+- **[CHANGELOG.md](CHANGELOG.md)** - Version history and release notes
+- **[IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md)** - Technical implementation details for v0.3.0
+- **[CONTAINER_TESTING.md](CONTAINER_TESTING.md)** - Guide for testing in Docker/Podman containers
+- **[PROJECT.md](PROJECT.md)** - Project overview and quick reference
+
 ## 🙏 Acknowledgments
 
 - [Ollama](https://ollama.ai/) for local AI inference
