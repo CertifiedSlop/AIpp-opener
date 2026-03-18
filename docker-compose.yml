@@ -1,0 +1,75 @@
+# Docker Compose for AIpp Opener with Ollama
+# Run: docker compose up -d
+# This starts both Ollama (with tinyllama model) and AIpp Opener
+
+version: '3.8'
+
+services:
+  # Ollama service with lightweight model
+  ollama:
+    image: ollama/ollama:latest
+    container_name: aipp-ollama
+    volumes:
+      - ollama_data:/root/.ollama
+    ports:
+      - "11434:11434"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    # Optional: GPU support for faster inference
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+
+  # AIpp Opener service
+  aipp-opener:
+    build:
+      context: .
+      dockerfile: Containerfile
+    container_name: aipp-opener
+    environment:
+      - DISPLAY=${DISPLAY:-:0}
+      - OLLAMA_HOST=http://ollama:11434
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix
+      - aipp_config:/root/.config/aipp_opener
+      - aipp_history:/root/.local/share/aipp_opener
+    depends_on:
+      ollama:
+        condition: service_healthy
+    stdin_open: true
+    tty: true
+    # For GUI mode, uncomment the following:
+    # network_mode: host
+    # For CLI mode:
+    network_mode: bridge
+
+  # Model puller - pulls the model after Ollama starts
+  model-puller:
+    image: curlimages/curl:latest
+    container_name: aipp-model-puller
+    depends_on:
+      ollama:
+        condition: service_healthy
+    command: >
+      sh -c "
+      curl -X POST http://ollama:11434/api/pull -d '{\"name\": \"tinyllama\"}' &&
+      echo 'Model pulled successfully'
+      "
+    restart: "no"
+
+volumes:
+  ollama_data:
+    driver: local
+  aipp_config:
+    driver: local
+  aipp_history:
+    driver: local
