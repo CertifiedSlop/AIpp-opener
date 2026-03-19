@@ -8,6 +8,10 @@ from typing import Optional
 
 from aipp_opener.detectors.base import AppDetector, AppInfo
 from aipp_opener.categories import AppCategorizer, AppCategory
+from aipp_opener.cache import AppDetectionCache
+from aipp_opener.logger_config import get_logger
+
+logger = get_logger(__name__)
 
 
 class NixOSAppDetector(AppDetector):
@@ -16,6 +20,7 @@ class NixOSAppDetector(AppDetector):
     def __init__(self):
         self._cache: Optional[list[AppInfo]] = None
         self.categorizer = AppCategorizer()
+        self.app_cache = AppDetectionCache(ttl=600)  # 10 minute cache
 
     def is_available(self) -> bool:
         """Check if running on NixOS."""
@@ -36,8 +41,16 @@ class NixOSAppDetector(AppDetector):
 
     def detect(self) -> list[AppInfo]:
         """Detect applications from Nix profiles."""
+        # Check memory cache first
         if self._cache is not None:
             return self._cache
+
+        # Check disk cache
+        cached_apps = self.app_cache.get_apps("nixos")
+        if cached_apps is not None:
+            logger.debug("Using cached app detection results for NixOS")
+            # Convert dicts back to AppInfo
+            return [AppInfo(**app) for app in cached_apps]
 
         apps = []
         seen_executables = set()
@@ -61,7 +74,10 @@ class NixOSAppDetector(AppDetector):
                 seen_executables.add(app.executable)
                 unique_apps.append(app)
 
+        # Cache the results
         self._cache = unique_apps
+        self.app_cache.set_apps("nixos", [app.__dict__ for app in unique_apps])
+
         return unique_apps
 
     def _detect_from_profile(self) -> list[AppInfo]:
@@ -256,3 +272,5 @@ class NixOSAppDetector(AppDetector):
     def refresh(self) -> None:
         """Clear the detection cache."""
         self._cache = None
+        self.app_cache.clear()
+        logger.info("App detection cache cleared for NixOS")
