@@ -22,6 +22,7 @@ from aipp_opener.config import ConfigManager
 from aipp_opener.voice import VoiceInput
 from aipp_opener.web_search import WebSearcher
 from aipp_opener.aliases import AliasManager
+from aipp_opener.groups import GroupManager
 
 logger = get_logger(__name__)
 
@@ -100,8 +101,9 @@ def process_command(
     Returns:
         Result message.
     """
-    # Initialize alias manager
+    # Initialize alias and group managers
     alias_manager = AliasManager()
+    group_manager = GroupManager()
 
     # Check if input is an alias
     alias_command = alias_manager.get_command(user_input.strip())
@@ -110,6 +112,16 @@ def process_command(
         if history and result.success:
             history.record(user_input, user_input, alias_command)
         return result.message
+
+    # Check if input is a group name
+    group = group_manager.get_group(user_input.strip())
+    if group:
+        success, results = group_manager.launch_group(user_input.strip(), executor)
+        messages = []
+        for result in results:
+            status = "✓" if result.success else "✗"
+            messages.append(f"{status} {result.app_name}: {result.message}")
+        return "\n".join(messages)
 
     # Get all installed apps
     installed_apps = detector.detect()
@@ -228,6 +240,41 @@ def interactive_mode(
                 print(f"Could not remove alias '{name}'")
             continue
 
+        # Handle group commands in interactive mode
+        if user_input.lower().startswith("group "):
+            group_manager = GroupManager()
+            group_name = user_input[6:].strip()
+            print(f"Launching group: {group_name}")
+            success, results = group_manager.launch_group(group_name, executor)
+            for result in results:
+                status = "✓" if result.success else "✗"
+                print(f"  {status} {result.app_name}: {result.message}")
+            continue
+
+        if user_input.lower() == "groups":
+            group_manager = GroupManager()
+            groups = group_manager.list_groups()
+            print(f"App groups ({len(groups)} total):")
+            for group in groups:
+                apps = ", ".join(group.apps)
+                desc = f" - {group.description}" if group.description else ""
+                print(f"  {group.name}: {apps}{desc}")
+            continue
+
+        if user_input.lower().startswith("create-group "):
+            group_manager = GroupManager()
+            parts = user_input[13:].strip()
+            if "=" in parts:
+                name, apps_str = parts.split("=", 1)
+                apps = [app.strip() for app in apps_str.split(",")]
+                if group_manager.add_group(name.strip(), apps):
+                    print(f"Created group: {name.strip()} ({len(apps)} apps)")
+                else:
+                    print(f"Group '{name.strip()}' already exists")
+            else:
+                print("Usage: create-group <name>=<app1,app2,...>")
+            continue
+
         if user_input.lower() == "stats" and history:
             stats = history.get_stats()
             print(json.dumps(stats, indent=2))
@@ -265,6 +312,10 @@ Available commands:
   aliases        - List all aliases
   unalias <name> - Remove an alias
 
+  group <name>   - Launch an app group (e.g., group dev)
+  groups         - List all groups
+  create-group <name>=<app1,app2> - Create a group
+
   help           - Show this help
   stats          - Show usage statistics
   frequent       - Show frequently used apps
@@ -278,6 +329,8 @@ Examples:
   > ff           (opens Firefox if alias exists)
   > alias code=code
   > code         (opens VS Code)
+  > group dev    (launches dev workspace)
+  > groups       (list all groups)
 """)
 
 
@@ -401,6 +454,24 @@ Examples:
         metavar="NAME",
         help="Remove a custom alias",
     )
+    parser.add_argument(
+        "--group",
+        metavar="NAME",
+        help="Launch an app group/workspace (e.g., --group dev)",
+    )
+    parser.add_argument(
+        "--create-group",
+        metavar="NAME=APP1,APP2,...",
+        help="Create a new app group (e.g., --create-group 'mygroup=code,firefox,term')",
+    )
+    parser.add_argument(
+        "--list-groups", action="store_true", help="List all app groups"
+    )
+    parser.add_argument(
+        "--remove-group",
+        metavar="NAME",
+        help="Remove an app group",
+    )
 
     args = parser.parse_args()
 
@@ -488,6 +559,50 @@ Examples:
             print(f"Removed alias: {args.remove_alias}")
         else:
             print(f"Could not remove alias '{args.remove_alias}' (may be a default alias)")
+        return
+
+    # Handle --group
+    if args.group:
+        group_manager = GroupManager()
+        print(f"Launching group: {args.group}")
+        success, results = group_manager.launch_group(args.group, executor)
+        for result in results:
+            status = "✓" if result.success else "✗"
+            print(f"  {status} {result.app_name}: {result.message}")
+        return
+
+    # Handle --create-group
+    if args.create_group:
+        group_manager = GroupManager()
+        if "=" not in args.create_group:
+            print("Error: Group must be in format NAME=APP1,APP2,...")
+            return
+        name, apps_str = args.create_group.split("=", 1)
+        apps = [app.strip() for app in apps_str.split(",")]
+        if group_manager.add_group(name.strip(), apps):
+            print(f"Created group: {name.strip()} ({len(apps)} apps)")
+        else:
+            print(f"Group '{name.strip()}' already exists")
+        return
+
+    # Handle --list-groups
+    if args.list_groups:
+        group_manager = GroupManager()
+        groups = group_manager.list_groups()
+        print(f"App groups ({len(groups)} total):")
+        for group in groups:
+            apps = ", ".join(group.apps)
+            desc = f" - {group.description}" if group.description else ""
+            print(f"  {group.name}: {apps}{desc}")
+        return
+
+    # Handle --remove-group
+    if args.remove_group:
+        group_manager = GroupManager()
+        if group_manager.remove_group(args.remove_group):
+            print(f"Removed group: {args.remove_group}")
+        else:
+            print(f"Could not remove group '{args.remove_group}' (may be a default group)")
         return
 
     # Handle --suggest
