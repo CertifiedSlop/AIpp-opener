@@ -21,6 +21,7 @@ from aipp_opener.logger_config import LoggerConfig, get_logger
 from aipp_opener.config import ConfigManager
 from aipp_opener.voice import VoiceInput
 from aipp_opener.web_search import WebSearcher
+from aipp_opener.aliases import AliasManager
 
 logger = get_logger(__name__)
 
@@ -99,6 +100,17 @@ def process_command(
     Returns:
         Result message.
     """
+    # Initialize alias manager
+    alias_manager = AliasManager()
+
+    # Check if input is an alias
+    alias_command = alias_manager.get_command(user_input.strip())
+    if alias_command:
+        result = executor.execute(alias_command)
+        if history and result.success:
+            history.record(user_input, user_input, alias_command)
+        return result.message
+
     # Get all installed apps
     installed_apps = detector.detect()
     app_names = [app.name for app in installed_apps]
@@ -183,6 +195,39 @@ def interactive_mode(
             print_help()
             continue
 
+        # Handle alias commands in interactive mode
+        if user_input.lower().startswith("alias "):
+            alias_manager = AliasManager()
+            parts = user_input[6:].strip()
+            if "=" in parts:
+                name, command = parts.split("=", 1)
+                if alias_manager.add_alias(name.strip(), command.strip()):
+                    print(f"Added alias: {name.strip()} -> {command.strip()}")
+                else:
+                    print(f"Alias '{name.strip()}' already exists")
+            else:
+                print("Usage: alias <name>=<command>")
+            continue
+
+        if user_input.lower() == "aliases":
+            alias_manager = AliasManager()
+            aliases = alias_manager.list_aliases()
+            print(f"Custom aliases ({len(aliases)} total):")
+            for alias in aliases:
+                tags = f" [{', '.join(alias.tags)}]" if alias.tags else ""
+                desc = f" - {alias.description}" if alias.description else ""
+                print(f"  {alias.name} -> {alias.command}{tags}{desc}")
+            continue
+
+        if user_input.lower().startswith("unalias "):
+            alias_manager = AliasManager()
+            name = user_input[8:].strip()
+            if alias_manager.remove_alias(name):
+                print(f"Removed alias: {name}")
+            else:
+                print(f"Could not remove alias '{name}'")
+            continue
+
         if user_input.lower() == "stats" and history:
             stats = history.get_stats()
             print(json.dumps(stats, indent=2))
@@ -216,6 +261,10 @@ Available commands:
   start <app>    - Start an application
   run <app>      - Run an application
 
+  alias <name>=<cmd> - Add a custom alias (e.g., alias ff=firefox)
+  aliases        - List all aliases
+  unalias <name> - Remove an alias
+
   help           - Show this help
   stats          - Show usage statistics
   frequent       - Show frequently used apps
@@ -226,6 +275,9 @@ Examples:
   > launch vs code
   > start terminal
   > run spotify
+  > ff           (opens Firefox if alias exists)
+  > alias code=code
+  > code         (opens VS Code)
 """)
 
 
@@ -336,6 +388,19 @@ Examples:
         metavar="QUERY",
         help="Search the web for an application (fallback when app not found)",
     )
+    parser.add_argument(
+        "--alias",
+        metavar="NAME=COMMAND",
+        help="Add a custom alias (e.g., --alias 'ff=firefox')",
+    )
+    parser.add_argument(
+        "--list-aliases", action="store_true", help="List all custom aliases"
+    )
+    parser.add_argument(
+        "--remove-alias",
+        metavar="NAME",
+        help="Remove a custom alias",
+    )
 
     args = parser.parse_args()
 
@@ -390,6 +455,39 @@ Examples:
         url = web_searcher.search_app(args.web_search)
         if url:
             print(f"Search URL: {url}")
+        return
+
+    # Handle --alias
+    if args.alias:
+        alias_manager = AliasManager()
+        if "=" not in args.alias:
+            print("Error: Alias must be in format NAME=COMMAND")
+            return
+        name, command = args.alias.split("=", 1)
+        if alias_manager.add_alias(name.strip(), command.strip()):
+            print(f"Added alias: {name.strip()} -> {command.strip()}")
+        else:
+            print(f"Alias '{name.strip()}' already exists")
+        return
+
+    # Handle --list-aliases
+    if args.list_aliases:
+        alias_manager = AliasManager()
+        aliases = alias_manager.list_aliases()
+        print(f"Custom aliases ({len(aliases)} total):")
+        for alias in aliases:
+            tags = f" [{', '.join(alias.tags)}]" if alias.tags else ""
+            desc = f" - {alias.description}" if alias.description else ""
+            print(f"  {alias.name} -> {alias.command}{tags}{desc}")
+        return
+
+    # Handle --remove-alias
+    if args.remove_alias:
+        alias_manager = AliasManager()
+        if alias_manager.remove_alias(args.remove_alias):
+            print(f"Removed alias: {args.remove_alias}")
+        else:
+            print(f"Could not remove alias '{args.remove_alias}' (may be a default alias)")
         return
 
     # Handle --suggest
