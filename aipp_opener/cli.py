@@ -15,6 +15,8 @@ from aipp_opener.ai.openrouter import OpenRouterProvider
 from aipp_opener.detectors.base import AppDetector
 from aipp_opener.detectors.debian import DebianAppDetector
 from aipp_opener.detectors.nixos import NixOSAppDetector
+from aipp_opener.detectors.fedora import FedoraAppDetector
+from aipp_opener.detectors.arch import ArchAppDetector
 from aipp_opener.executor import AppExecutor
 from aipp_opener.history import HistoryManager
 from aipp_opener.logger_config import LoggerConfig, get_logger
@@ -30,19 +32,34 @@ logger = get_logger(__name__)
 def get_app_detector() -> AppDetector:
     """Get the appropriate app detector for the current system."""
     logger.debug("Detecting platform for app detector")
+
+    # Try NixOS first
     nixos_detector = NixOSAppDetector()
     if nixos_detector.is_available():
         logger.info("Platform detected: NixOS")
         return nixos_detector
 
+    # Try Fedora/RHEL
+    fedora_detector = FedoraAppDetector()
+    if fedora_detector.is_available():
+        logger.info("Platform detected: Fedora/RHEL")
+        return fedora_detector
+
+    # Try Arch Linux
+    arch_detector = ArchAppDetector()
+    if arch_detector.is_available():
+        logger.info("Platform detected: Arch Linux")
+        return arch_detector
+
+    # Try Debian/Ubuntu
     debian_detector = DebianAppDetector()
     if debian_detector.is_available():
         logger.info("Platform detected: Debian/Ubuntu")
         return debian_detector
 
-    # Default to NixOS detector (will still scan common paths)
-    logger.info("Platform not detected, using generic NixOS detector")
-    return nixos_detector
+    # Default to Debian detector (will still scan common paths)
+    logger.info("Platform not detected, using generic Debian detector")
+    return debian_detector
 
 
 def get_ai_provider(config: ConfigManager) -> AIProvider:
