@@ -20,10 +20,47 @@ from aipp_opener.ai.nlp import NLPProcessor
 from aipp_opener.executor import AppExecutor, ExecutionResult
 from aipp_opener.history import HistoryManager
 from aipp_opener.voice import VoiceInput
+from aipp_opener.icons import IconFinder
 
 
 class AppLauncherGUI:
     """GUI application launcher with search and suggestions."""
+
+    # Light theme colors
+    LIGHT_THEME = {
+        "bg": "#f5f5f5",
+        "fg": "#2d2d2d",
+        "frame_bg": "#ffffff",
+        "entry_bg": "#ffffff",
+        "entry_fg": "#2d2d2d",
+        "button_bg": "#e0e0e0",
+        "button_fg": "#2d2d2d",
+        "accent_bg": "#4a90d9",
+        "accent_fg": "#ffffff",
+        "header_bg": "#f0f0f0",
+        "border": "#cccccc",
+        "toast_success": "#4caf50",
+        "toast_error": "#f44336",
+        "toast_info": "#2196f3",
+    }
+
+    # Dark theme colors
+    DARK_THEME = {
+        "bg": "#1e1e1e",
+        "fg": "#e0e0e0",
+        "frame_bg": "#2d2d2d",
+        "entry_bg": "#2d2d2d",
+        "entry_fg": "#e0e0e0",
+        "button_bg": "#3d3d3d",
+        "button_fg": "#e0e0e0",
+        "accent_bg": "#5a9fd9",
+        "accent_fg": "#ffffff",
+        "header_bg": "#252525",
+        "border": "#404040",
+        "toast_success": "#4caf50",
+        "toast_error": "#f44336",
+        "toast_info": "#2196f3",
+    }
 
     def __init__(self, root: tk.Tk):
         self.root = root
@@ -39,6 +76,7 @@ class AppLauncherGUI:
         self.nlp = NLPProcessor()
         self.history = HistoryManager() if self.config.get().history_enabled else None
         self.voice = VoiceInput()
+        self.icon_finder = IconFinder()
 
         # Load apps
         self.apps = self.detector.detect()
@@ -46,6 +84,10 @@ class AppLauncherGUI:
 
         # Load favorites
         self.favorites = self._load_favorites()
+
+        # Theme state
+        self.dark_mode = False
+        self.current_theme = self.LIGHT_THEME.copy()
 
         # Setup UI
         self._setup_styles()
@@ -55,6 +97,19 @@ class AppLauncherGUI:
         self.search_entry.bind("<Return>", lambda e: self.launch_selected())
         self.search_entry.bind("<Down>", lambda e: self._navigate_results(1))
         self.search_entry.bind("<Up>", lambda e: self._navigate_results(-1))
+        self.search_entry.bind("<Prior>", lambda e: self._navigate_page(-1))  # Page Up
+        self.search_entry.bind("<Next>", lambda e: self._navigate_page(1))    # Page Down
+        self.search_entry.bind("<Home>", lambda e: self._jump_to_first())
+        self.search_entry.bind("<End>", lambda e: self._jump_to_last())
+        self.search_entry.bind("<Escape>", lambda e: self.search_entry.delete(0, tk.END))
+
+        # Bind treeview events
+        self.results_tree.bind("<Down>", lambda e: self._navigate_results(1))
+        self.results_tree.bind("<Up>", lambda e: self._navigate_results(-1))
+        self.results_tree.bind("<Prior>", lambda e: self._navigate_page(-1))
+        self.results_tree.bind("<Next>", lambda e: self._navigate_page(1))
+        self.results_tree.bind("<Home>", lambda e: self._jump_to_first())
+        self.results_tree.bind("<End>", lambda e: self._jump_to_last())
 
         # Focus search on startup
         self.search_entry.focus_set()
@@ -115,12 +170,27 @@ class AppLauncherGUI:
         elif "alt" in available_themes:
             style.theme_use("alt")
 
+        self._apply_theme_colors()
+
+    def _apply_theme_colors(self) -> None:
+        """Apply current theme colors."""
+        style = ttk.Style()
+        theme = self.current_theme
+
         # Configure colors
-        style.configure("TFrame", background="#f5f5f5")
-        style.configure("TLabel", background="#f5f5f5", font=("Segoe UI", 10))
-        style.configure("Header.TLabel", font=("Segoe UI", 14, "bold"))
-        style.configure("TButton", font=("Segoe UI", 10), padding=5)
-        style.configure("Accent.TButton", font=("Segoe UI", 10, "bold"), padding=5)
+        style.configure("TFrame", background=theme["bg"])
+        style.configure("TLabel", background=theme["bg"], foreground=theme["fg"], font=("Segoe UI", 10))
+        style.configure("Header.TLabel", background=theme["bg"], font=("Segoe UI", 14, "bold"), foreground=theme["fg"])
+        style.configure("TButton", font=("Segoe UI", 10), padding=5, background=theme["button_bg"], foreground=theme["button_fg"])
+        style.configure("Accent.TButton", font=("Segoe UI", 10, "bold"), padding=5, background=theme["accent_bg"], foreground=theme["accent_fg"])
+        style.configure("TLabelframe", background=theme["bg"], foreground=theme["fg"])
+        style.configure("TLabelframe.Label", background=theme["bg"], foreground=theme["fg"])
+        style.configure("Treeview", background=theme["frame_bg"], foreground=theme["fg"], fieldbackground=theme["frame_bg"])
+        style.configure("Treeview.Heading", background=theme["header_bg"], foreground=theme["fg"])
+        style.map("Treeview", background=[("selected", theme["accent_bg"])], foreground=[("selected", theme["accent_fg"])])
+
+        # Update root window colors
+        self.root.configure(bg=theme["bg"])
 
     def _setup_ui(self) -> None:
         """Setup the user interface."""
@@ -141,11 +211,19 @@ class AppLauncherGUI:
         title_label = ttk.Label(header_frame, text="🚀 AIpp Opener", style="Header.TLabel")
         title_label.grid(row=0, column=0, sticky="w")
 
-        # Voice button
-        self.voice_btn = ttk.Button(
-            header_frame, text="🎤 Voice", command=self._toggle_voice, width=10
+        # Theme toggle and voice buttons
+        btn_container = ttk.Frame(header_frame)
+        btn_container.grid(row=0, column=1, padx=(10, 0))
+
+        self.theme_btn = ttk.Button(
+            btn_container, text="🌙 Dark", command=self._toggle_theme, width=10
         )
-        self.voice_btn.grid(row=0, column=1, padx=(10, 0))
+        self.theme_btn.pack(side="left", padx=(0, 5))
+
+        self.voice_btn = ttk.Button(
+            btn_container, text="🎤 Voice", command=self._toggle_voice, width=10
+        )
+        self.voice_btn.pack(side="left")
 
         self.voice_active = False
 
@@ -184,16 +262,18 @@ class AppLauncherGUI:
         results_frame.columnconfigure(0, weight=1)
         results_frame.rowconfigure(0, weight=1)
 
-        # Treeview for results
-        columns = ("name", "category", "path")
+        # Treeview for results with icon column
+        columns = ("icon", "name", "category", "path")
         self.results_tree = ttk.Treeview(
             results_frame, columns=columns, show="headings", selectmode="browse"
         )
 
+        self.results_tree.heading("icon", text="")
         self.results_tree.heading("name", text="Name")
         self.results_tree.heading("category", text="Category")
         self.results_tree.heading("path", text="Path")
 
+        self.results_tree.column("icon", width=40, minwidth=40, anchor="center")
         self.results_tree.column("name", width=200, minwidth=150)
         self.results_tree.column("category", width=100, minwidth=80)
         self.results_tree.column("path", width=300, minwidth=200)
@@ -238,6 +318,55 @@ class AppLauncherGUI:
             main_frame, textvariable=self.status_var, relief="sunken", padding=(5, 2)
         )
         status_bar.grid(row=5, column=0, sticky="ew", pady=(5, 0))
+
+        # Toast notification area
+        self._toast_label = None
+        self._toast_after_id = None
+
+    def _toggle_theme(self) -> None:
+        """Toggle between light and dark theme."""
+        self.dark_mode = not self.dark_mode
+        self.current_theme = self.DARK_THEME.copy() if self.dark_mode else self.LIGHT_THEME.copy()
+        self._apply_theme_colors()
+
+        # Update theme button text
+        self.theme_btn.configure(text="☀️ Light" if self.dark_mode else "🌙 Dark")
+
+        # Update all widget colors
+        self._update_all_widget_colors()
+
+        # Show toast notification
+        self._show_toast(
+            "Dark mode enabled" if self.dark_mode else "Light mode enabled",
+            "info"
+        )
+
+    def _update_all_widget_colors(self) -> None:
+        """Update colors for all widgets."""
+        theme = self.current_theme
+
+        # Update search entry
+        self.search_entry.configure(
+            bg=theme["entry_bg"],
+            fg=theme["entry_fg"],
+            insertbackground=theme["fg"]
+        )
+
+        # Update status bar
+        self.status_var.set(self.status_var.get())
+
+        # Refresh treeview
+        self._refresh_treeview_colors()
+
+        # Update favorites
+        self._update_favorites_display()
+
+    def _refresh_treeview_colors(self) -> None:
+        """Refresh treeview colors."""
+        theme = self.current_theme
+        style = ttk.Style()
+        style.configure("Treeview", background=theme["frame_bg"], foreground=theme["fg"], fieldbackground=theme["frame_bg"])
+        style.configure("Treeview.Heading", background=theme["header_bg"], foreground=theme["fg"])
 
     def _update_favorites_display(self) -> None:
         """Update the favorites display."""
@@ -312,14 +441,59 @@ class AppLauncherGUI:
         self.status_var.set(f"Found {len(matches)} matches")
 
     def _add_app_to_tree(self, app) -> None:
-        """Add an app to the results tree."""
+        """Add an app to the results tree with icon."""
         category = app.categories[0] if app.categories else "Other"
+        icon_info = self.icon_finder.find_icon(app.display_name or app.name, app.executable)
+
+        # Get icon emoji based on category or icon availability
+        icon_emoji = self._get_icon_emoji(icon_info, category)
+
         self.results_tree.insert(
             "",
             "end",
-            values=(app.display_name or app.name, category, app.executable),
+            values=(icon_emoji, app.display_name or app.name, category, app.executable),
             tags=(app.name.lower(),),
         )
+
+    def _get_icon_emoji(self, icon_info, category: str) -> str:
+        """Get an emoji icon for the app based on icon or category."""
+        # If we have a real icon, return a generic application emoji
+        if icon_info.exists():
+            return "📦"
+
+        # Category-based emojis
+        category_icons = {
+            "browser": "🌐",
+            "editor": "📝",
+            "ide": "💻",
+            "terminal": "💻",
+            "media": "🎵",
+            "video": "🎬",
+            "graphics": "🎨",
+            "image": "🖼️",
+            "office": "📊",
+            "document": "📄",
+            "pdf": "📕",
+            "communication": "💬",
+            "chat": "💬",
+            "email": "📧",
+            "file": "📁",
+            "manager": "📂",
+            "music": "🎵",
+            "audio": "🎧",
+            "game": "🎮",
+            "development": "🔧",
+            "system": "⚙️",
+            "utility": "🔧",
+            "settings": "⚙️",
+        }
+
+        cat_lower = category.lower()
+        for key, emoji in category_icons.items():
+            if key in cat_lower:
+                return emoji
+
+        return "📦"  # Default
 
     def _navigate_results(self, direction: int) -> None:
         """Navigate through results with keyboard."""
@@ -334,17 +508,54 @@ class AppLauncherGUI:
             if next_item:
                 self.results_tree.selection_set(next_item)
                 self.results_tree.focus(next_item)
+                self.results_tree.see(next_item)
         else:
             first = self.results_tree.get_children()
             if first:
                 self.results_tree.selection_set(first[0])
                 self.results_tree.focus(first[0])
 
+    def _navigate_page(self, direction: int) -> None:
+        """Navigate by page (Page Up/Page Down)."""
+        visible_items = self.results_tree.get_children()
+        if not visible_items:
+            return
+
+        selected = self.results_tree.selection()
+        page_size = 10
+
+        if selected:
+            current_idx = list(visible_items).index(selected[0])
+        else:
+            current_idx = -1
+
+        new_idx = current_idx + (page_size * direction)
+        new_idx = max(0, min(new_idx, len(visible_items) - 1))
+
+        item = visible_items[new_idx]
+        self.results_tree.selection_set(item)
+        self.results_tree.focus(item)
+        self.results_tree.see(item)
+
+    def _jump_to_first(self) -> None:
+        """Jump to first item (Home key)."""
+        items = self.results_tree.get_children()
+        if items:
+            self.results_tree.selection_set(items[0])
+            self.results_tree.focus(items[0])
+
+    def _jump_to_last(self) -> None:
+        """Jump to last item (End key)."""
+        items = self.results_tree.get_children()
+        if items:
+            self.results_tree.selection_set(items[-1])
+            self.results_tree.focus(items[-1])
+
     def launch_selected(self) -> None:
         """Launch the selected application."""
         selection = self.results_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select an application to launch.")
+            self._show_toast("Please select an application to launch", "info")
             return
 
         item = self.results_tree.item(selection[0])
@@ -382,17 +593,16 @@ class AppLauncherGUI:
         """Handle launch completion."""
         if result.success:
             self.status_var.set(f"✓ Launched: {result.app_name}")
+            self._show_toast(f"✓ Launched: {result.app_name}", "success")
         else:
             self.status_var.set(f"✗ Failed: {result.message}")
-            messagebox.showerror("Launch Failed", result.message)
+            self._show_toast(f"✗ {result.message}", "error")
 
     def add_to_favorites(self) -> None:
         """Add selected app to favorites."""
         selection = self.results_tree.selection()
         if not selection:
-            messagebox.showwarning(
-                "No Selection", "Please select an application to add to favorites."
-            )
+            self._show_toast("Please select an application to add to favorites", "info")
             return
 
         item = self.results_tree.item(selection[0])
@@ -406,8 +616,10 @@ class AppLauncherGUI:
                     self._save_favorites()
                     self._update_favorites_display()
                     self.status_var.set(f"Added {app_name} to favorites")
+                    self._show_toast(f"✓ Added {app_name} to favorites", "success")
                 else:
                     self.status_var.set(f"{app_name} is already in favorites")
+                    self._show_toast(f"{app_name} is already in favorites", "info")
                 return
 
     def remove_from_favorites(self, app_name: str) -> None:
@@ -571,6 +783,52 @@ class AppLauncherGUI:
 
         ttk.Button(btn_frame, text="Save", command=save_settings).pack(side="right", padx=5)
         ttk.Button(btn_frame, text="Cancel", command=settings_win.destroy).pack(side="right")
+
+    def _show_toast(self, message: str, toast_type: str = "info") -> None:
+        """Show a toast notification."""
+        # Cancel any pending toast hide
+        if self._toast_after_id:
+            self.root.after_cancel(self._toast_after_id)
+            self._toast_after_id = None
+
+        # Hide existing toast
+        if self._toast_label:
+            self._toast_label.destroy()
+            self._toast_label = None
+
+        # Determine colors
+        colors = {
+            "success": self.current_theme["toast_success"],
+            "error": self.current_theme["toast_error"],
+            "info": self.current_theme["toast_info"],
+        }
+        bg_color = colors.get(toast_type, colors["info"])
+
+        # Create toast label
+        self._toast_label = tk.Label(
+            self.root,
+            text=message,
+            bg=bg_color,
+            fg="#ffffff",
+            font=("Segoe UI", 10),
+            padx=20,
+            pady=10,
+            relief="raised",
+            borderwidth=2,
+        )
+
+        # Position at bottom right
+        self._toast_label.place(relx=1.0, rely=1.0, x=-20, y=-60, anchor="se")
+
+        # Auto-hide after 3 seconds
+        self._toast_after_id = self.root.after(3000, self._hide_toast)
+
+    def _hide_toast(self) -> None:
+        """Hide the toast notification."""
+        if self._toast_label:
+            self._toast_label.destroy()
+            self._toast_label = None
+        self._toast_after_id = None
 
 
 def main():
