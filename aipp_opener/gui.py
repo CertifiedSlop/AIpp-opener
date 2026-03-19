@@ -80,9 +80,10 @@ class AppLauncherGUI:
         self.icon_finder = IconFinder()
         self.web_searcher = WebSearcher()
 
-        # Load apps
-        self.apps = self.detector.detect()
-        self.app_dict = {app.name.lower(): app for app in self.apps}
+        # Load apps asynchronously (lazy loading)
+        self.apps = []
+        self.app_dict = {}
+        self._apps_loaded = False
 
         # Load favorites
         self.favorites = self._load_favorites()
@@ -116,8 +117,8 @@ class AppLauncherGUI:
         # Focus search on startup
         self.search_entry.focus_set()
 
-        # Update suggestions
-        self._update_suggestions("")
+        # Load apps in background (lazy loading)
+        self._load_apps_async()
 
     def _get_detector(self) -> AppDetector:
         """Get the appropriate app detector."""
@@ -142,6 +143,32 @@ class AppLauncherGUI:
             return OpenRouterProvider(api_key=ai_config.api_key, model=ai_config.model)
 
         return OllamaProvider()
+
+    def _load_apps_async(self) -> None:
+        """Load apps asynchronously in a background thread."""
+        self.status_var.set("Loading applications...")
+
+        def load_apps():
+            apps = self.detector.detect()
+            app_dict = {app.name.lower(): app for app in apps}
+
+            # Update in main thread
+            self.root.after(0, lambda: self._on_apps_loaded(apps, app_dict))
+
+        thread = threading.Thread(target=load_apps, daemon=True)
+        thread.start()
+
+    def _on_apps_loaded(self, apps: list, app_dict: dict) -> None:
+        """Handle apps loaded callback."""
+        self.apps = apps
+        self.app_dict = app_dict
+        self._apps_loaded = True
+
+        self.status_var.set(f"Loaded {len(apps)} applications")
+        self._update_suggestions(self.search_entry.get())
+
+        # Refresh favorites display now that we have apps
+        self._update_favorites_display()
 
     def _load_favorites(self) -> list[str]:
         """Load favorite apps from config."""
@@ -422,6 +449,17 @@ class AppLauncherGUI:
         for item in self.results_tree.get_children():
             self.results_tree.delete(item)
 
+        # Handle apps not loaded yet
+        if not self._apps_loaded:
+            self.results_tree.insert(
+                "",
+                "end",
+                values=("⏳", "Loading applications...", "Please wait", ""),
+                tags=("loading",),
+            )
+            self.status_var.set("Loading applications...")
+            return
+
         if not query.strip():
             # Show frequent apps
             if self.history:
@@ -441,6 +479,11 @@ class AppLauncherGUI:
         app_names = [app.name for app in self.apps]
 
         matches = self.nlp.find_all_matches(extracted, app_names, min_score=40)
+
+        if not matches:
+            # No matches found - suggest web search
+            self._show_no_results_message(query)
+            return
 
         for name, _score in matches[:50]:
             app = self.app_dict.get(name.lower())
@@ -620,15 +663,18 @@ class AppLauncherGUI:
     def refresh_apps(self) -> None:
         """Refresh the app list."""
         self.status_var.set("Refreshing app list...")
-        self.root.update()
+        self._apps_loaded = False
 
         def run_refresh():
+            # Clear detector cache
             self.detector.refresh()
-            self.apps = self.detector.detect()
-            self.app_dict = {app.name.lower(): app for app in self.apps}
+
+            # Reload apps
+            apps = self.detector.detect()
+            app_dict = {app.name.lower(): app for app in apps}
 
             # Update in main thread
-            self.root.after(0, self._on_refresh_complete)
+            self.root.after(0, lambda: self._on_apps_loaded(apps, app_dict))
 
         thread = threading.Thread(target=run_refresh, daemon=True)
         thread.start()
