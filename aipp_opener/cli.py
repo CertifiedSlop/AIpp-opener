@@ -25,6 +25,7 @@ from aipp_opener.voice import VoiceInput
 from aipp_opener.web_search import WebSearcher
 from aipp_opener.aliases import AliasManager
 from aipp_opener.groups import GroupManager
+from aipp_opener.plugins import PluginManager
 
 logger = get_logger(__name__)
 
@@ -454,6 +455,24 @@ Examples:
         help="Set logging level",
     )
     parser.add_argument(
+        "--plugins", action="store_true", help="List all plugins"
+    )
+    parser.add_argument(
+        "--plugin-info",
+        metavar="NAME",
+        help="Show information about a plugin",
+    )
+    parser.add_argument(
+        "--enable-plugin",
+        metavar="NAME",
+        help="Enable a plugin",
+    )
+    parser.add_argument(
+        "--disable-plugin",
+        metavar="NAME",
+        help="Disable a plugin",
+    )
+    parser.add_argument(
         "--web-search",
         metavar="QUERY",
         help="Search the web for an application (fallback when app not found)",
@@ -512,6 +531,7 @@ Examples:
     executor = AppExecutor(use_notifications=not args.no_notifications)
     nlp = NLPProcessor()
     history = HistoryManager() if not args.no_history and config.get().history_enabled else None
+    plugin_manager = PluginManager()
 
     # Handle --setup
     if args.setup:
@@ -524,6 +544,66 @@ Examples:
     if args.config:
         print("Current configuration:")
         print(json.dumps(config.get().model_dump(), indent=2))
+        return
+
+    # Handle --plugins
+    if args.plugins:
+        plugin_manager.load_all_plugins()
+        plugins = plugin_manager.get_all_plugins()
+        stats = plugin_manager.get_stats()
+
+        print(f"\nPlugin Statistics:")
+        print(f"  Total: {stats['total_plugins']}")
+        print(f"  Enabled: {stats['enabled_plugins']}")
+        print(f"  Detector plugins: {stats['detector_plugins']}")
+        print(f"  Command plugins: {stats['command_plugins']}")
+        print(f"  Result modifier plugins: {stats['result_modifier_plugins']}")
+
+        if plugins:
+            print(f"\nLoaded Plugins:")
+            for plugin in plugins:
+                enabled = plugin_manager._plugin_configs.get(plugin.name, {}).get("enabled", True)
+                status = "✓" if enabled else "✗"
+                print(f"  {status} {plugin.name} v{plugin.version}")
+                if plugin.description:
+                    print(f"      {plugin.description}")
+        else:
+            print("\nNo plugins installed.")
+            print(f"Plugin directory: {plugin_manager.plugin_dir}")
+        return
+
+    # Handle --plugin-info
+    if args.plugin_info:
+        plugin_manager.load_all_plugins()
+        info = plugin_manager.get_plugin_info(args.plugin_info)
+
+        if info:
+            print(f"\nPlugin: {info['name']}")
+            print(f"  Version: {info['version']}")
+            print(f"  Type: {info['type']}")
+            print(f"  Enabled: {'Yes' if info['enabled'] else 'No'}")
+            if info['description']:
+                print(f"  Description: {info['description']}")
+        else:
+            print(f"Plugin not found: {args.plugin_info}")
+        return
+
+    # Handle --enable-plugin
+    if args.enable_plugin:
+        plugin_manager.load_all_plugins()
+        if plugin_manager.enable_plugin(args.enable_plugin):
+            print(f"Enabled plugin: {args.enable_plugin}")
+        else:
+            print(f"Could not enable plugin: {args.enable_plugin}")
+        return
+
+    # Handle --disable-plugin
+    if args.disable_plugin:
+        plugin_manager.load_all_plugins()
+        if plugin_manager.disable_plugin(args.disable_plugin):
+            print(f"Disabled plugin: {args.disable_plugin}")
+        else:
+            print(f"Could not disable plugin: {args.disable_plugin}")
         return
 
     # Handle --list-apps
