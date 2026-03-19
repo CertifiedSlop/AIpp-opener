@@ -21,6 +21,7 @@ from aipp_opener.executor import AppExecutor, ExecutionResult
 from aipp_opener.history import HistoryManager
 from aipp_opener.voice import VoiceInput
 from aipp_opener.icons import IconFinder
+from aipp_opener.web_search import WebSearcher
 
 
 class AppLauncherGUI:
@@ -77,6 +78,7 @@ class AppLauncherGUI:
         self.history = HistoryManager() if self.config.get().history_enabled else None
         self.voice = VoiceInput()
         self.icon_finder = IconFinder()
+        self.web_searcher = WebSearcher()
 
         # Load apps
         self.apps = self.detector.detect()
@@ -305,6 +307,13 @@ class AppLauncherGUI:
 
         fav_btn = ttk.Button(btn_frame, text="⭐ Add to Favorites", command=self.add_to_favorites)
         fav_btn.pack(side="left", padx=(0, 5))
+
+        web_search_btn = ttk.Button(
+            btn_frame,
+            text="🌐 Search Web",
+            command=self.search_web_for_query,
+        )
+        web_search_btn.pack(side="left", padx=(0, 5))
 
         refresh_btn = ttk.Button(btn_frame, text="🔄 Refresh", command=self.refresh_apps)
         refresh_btn.pack(side="left", padx=(0, 5))
@@ -550,27 +559,6 @@ class AppLauncherGUI:
         if items:
             self.results_tree.selection_set(items[-1])
             self.results_tree.focus(items[-1])
-
-    def launch_selected(self) -> None:
-        """Launch the selected application."""
-        selection = self.results_tree.selection()
-        if not selection:
-            self._show_toast("Please select an application to launch", "info")
-            return
-
-        item = self.results_tree.item(selection[0])
-        app_name = item["values"][0]
-        executable = item["values"][2]
-
-        # Find the app object
-        app = None
-        for a in self.apps:
-            if a.executable == executable or a.name == app_name:
-                app = a
-                break
-
-        if app:
-            self.launch_app(app)
 
     def launch_app(self, app) -> None:
         """Launch an application."""
@@ -829,6 +817,99 @@ class AppLauncherGUI:
             self._toast_label.destroy()
             self._toast_label = None
         self._toast_after_id = None
+
+    def search_web_for_query(self, query: Optional[str] = None) -> None:
+        """
+        Search the web for a query.
+
+        Args:
+            query: Search query. If None, uses current search text.
+        """
+        if query is None:
+            query = self.search_entry.get().strip()
+
+        if not query:
+            self._show_toast("Please enter a search query", "info")
+            return
+
+        # Search for the app on the web
+        self.web_searcher.search_app(query)
+        self._show_toast(f"Searching web for '{query}'...", "info")
+
+    def _update_suggestions(self, query: str) -> None:
+        """Update suggestions based on query."""
+        # Clear existing items
+        for item in self.results_tree.get_children():
+            self.results_tree.delete(item)
+
+        if not query.strip():
+            # Show frequent apps
+            if self.history:
+                frequent = self.history.get_frequent_apps(20)
+                for freq in frequent:
+                    app = self.app_dict.get(freq["app_name"].lower())
+                    if app:
+                        self._add_app_to_tree(app)
+            else:
+                # Show first 50 apps
+                for app in self.apps[:50]:
+                    self._add_app_to_tree(app)
+            return
+
+        # Use NLP to find matches
+        extracted = self.nlp.extract_app_intent(query)
+        app_names = [app.name for app in self.apps]
+
+        matches = self.nlp.find_all_matches(extracted, app_names, min_score=40)
+
+        if not matches:
+            # No matches found - suggest web search
+            self._show_no_results_message(query)
+            return
+
+        for name, _score in matches[:50]:
+            app = self.app_dict.get(name.lower())
+            if app:
+                self._add_app_to_tree(app)
+
+        self.status_var.set(f"Found {len(matches)} matches")
+
+    def _show_no_results_message(self, query: str) -> None:
+        """Show a message when no results are found with web search option."""
+        # Add a single item to the tree suggesting web search
+        self.results_tree.insert(
+            "",
+            "end",
+            values=("🌐", f"No apps found for '{query}'", "Web Search", "Click Launch to search web"),
+            tags=("web_search",),
+        )
+        self.status_var.set("No matches found. Try searching the web.")
+
+    def launch_selected(self) -> None:
+        """Launch the selected application or search web if no app found."""
+        selection = self.results_tree.selection()
+        if not selection:
+            self._show_toast("Please select an application to launch", "info")
+            return
+
+        item = self.results_tree.item(selection[0])
+        app_name = item["values"][0]
+        executable = item["values"][2]
+
+        # Check if this is a web search suggestion
+        if executable == "Click Launch to search web":
+            self.search_web_for_query(app_name.split("'")[1] if "'" in app_name else app_name)
+            return
+
+        # Find the app object
+        app = None
+        for a in self.apps:
+            if a.executable == executable or a.name == app_name:
+                app = a
+                break
+
+        if app:
+            self.launch_app(app)
 
 
 def main():

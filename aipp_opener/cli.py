@@ -20,6 +20,7 @@ from aipp_opener.history import HistoryManager
 from aipp_opener.logger_config import LoggerConfig, get_logger
 from aipp_opener.config import ConfigManager
 from aipp_opener.voice import VoiceInput
+from aipp_opener.web_search import WebSearcher
 
 logger = get_logger(__name__)
 
@@ -146,9 +147,9 @@ def process_command(
 
     if suggestions:
         suggestion_list = ", ".join(suggestions)
-        return f"No exact match found. Did you mean: {suggestion_list}?"
+        return f"No exact match found. Did you mean: {suggestion_list}?\nUse --web-search '{extracted}' to search online."
     else:
-        return f"Could not find any matching applications for '{extracted}'"
+        return f"Could not find any matching applications for '{extracted}'.\nUse --web-search '{extracted}' to search online."
 
 
 def interactive_mode(
@@ -330,6 +331,11 @@ Examples:
         default=None,
         help="Set logging level",
     )
+    parser.add_argument(
+        "--web-search",
+        metavar="QUERY",
+        help="Search the web for an application (fallback when app not found)",
+    )
 
     args = parser.parse_args()
 
@@ -375,6 +381,15 @@ Examples:
             print(f"  - {app.name}: {app.executable}")
         if len(apps) > 50:
             print(f"  ... and {len(apps) - 50} more")
+        return
+
+    # Handle --web-search
+    if args.web_search:
+        web_searcher = WebSearcher()
+        print(f"Searching web for '{args.web_search}'...")
+        url = web_searcher.search_app(args.web_search)
+        if url:
+            print(f"Search URL: {url}")
         return
 
     # Handle --suggest
