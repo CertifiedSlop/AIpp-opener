@@ -180,8 +180,8 @@ pyproject.toml          # UPDATED - Version 0.3.0-dev
 
 ### Phase 4 (Future)
 - [ ] Performance optimization (lazy loading, caching, async)
-- [ ] Better Wayland support
-- [ ] Additional Linux distribution support
+- [x] Better Wayland support (via XDG Desktop Portal GlobalShortcuts)
+- [x] Additional Linux distribution support (Fedora, Arch)
 
 ## Installation & Testing
 

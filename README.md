@@ -370,12 +370,37 @@ pip install pystray pillow
 
 ### Keyboard Shortcuts Not Working
 
+**For X11:**
 Install pynput:
 ```bash
 pip install pynput python-xlib
 ```
 
-Note: Some Wayland compositors may restrict global shortcuts.
+**For Wayland:**
+The app now supports Wayland global shortcuts via XDG Desktop Portal!
+
+Requirements:
+- `xdg-desktop-portal` (usually pre-installed on Wayland sessions)
+- `python-dbus` and `pygobject` for D-Bus communication
+
+```bash
+# Debian/Ubuntu
+sudo apt install python3-dbus python3-gi
+
+# Fedora
+sudo dnf install python3-dbus python3-gobject
+
+# Arch
+sudo pacman -S python-dbus python-gobject
+```
+
+The app automatically detects your session type (X11 or Wayland) and uses the appropriate backend.
+
+**Note:** Wayland GlobalShortcuts portal support depends on your compositor:
+- **GNOME 48+**: Full support with configuration UI
+- **KDE Plasma**: Full support with GUI
+- **Hyprland**: Limited support (requires manual config)
+- **wlroots**: Not yet supported
 
 ### Voice Input Not Working
 

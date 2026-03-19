@@ -1,9 +1,18 @@
-"""Global keyboard shortcut support for AIpp Opener."""
+"""Global keyboard shortcut support for AIpp Opener.
+
+Supports both X11 (via pynput/python-xlib) and Wayland (via XDG Desktop Portal).
+Automatically detects the session type and uses the appropriate backend.
+"""
 
 import threading
 import subprocess
 import sys
+import os
 from typing import Optional, Callable
+
+from aipp_opener.logger_config import get_logger
+
+logger = get_logger(__name__)
 
 try:
     from pynput import keyboard
@@ -21,9 +30,17 @@ try:
 except ImportError:
     XLIB_AVAILABLE = False
 
+# Try to import Wayland support
+try:
+    from aipp_opener.wayland_shortcuts import WaylandShortcutSession
+
+    WAYLAND_AVAILABLE = True
+except ImportError:
+    WAYLAND_AVAILABLE = False
+
 
 class KeyboardShortcut:
-    """Global keyboard shortcut handler."""
+    """Global keyboard shortcut handler with X11 and Wayland support."""
 
     def __init__(self, shortcut: str = "<ctrl><alt>space"):
         """
@@ -37,10 +54,24 @@ class KeyboardShortcut:
         self.listener: Optional[keyboard.Listener] = None
         self._pressed = set()
         self._running = False
+        self._wayland_session: Optional[WaylandShortcutSession] = None
+        self._use_wayland = False
 
     def is_available(self) -> bool:
         """Check if keyboard shortcuts are available."""
+        # Prefer Wayland if available and running
+        if self._detect_wayland():
+            return WAYLAND_AVAILABLE
         return KEYBOARD_AVAILABLE
+
+    def _detect_wayland(self) -> bool:
+        """Detect if running under a Wayland session."""
+        wayland_indicators = [
+            os.environ.get("WAYLAND_DISPLAY"),
+            os.environ.get("XDG_SESSION_TYPE") == "wayland",
+            os.environ.get("DESKTOP_SESSION") == "wayland",
+        ]
+        return any(wayland_indicators)
 
     def parse_shortcut(self, shortcut: str) -> set:
         """
@@ -93,10 +124,54 @@ class KeyboardShortcut:
         Args:
             callback: Function to call when shortcut is pressed.
         """
-        if not self.is_available():
-            print("Keyboard shortcuts not available. Install pynput.")
+        # Detect session type and use appropriate backend
+        if self._detect_wayland() and WAYLAND_AVAILABLE:
+            self._start_wayland(callback)
+        elif KEYBOARD_AVAILABLE:
+            self._start_x11(callback)
+        else:
+            print(
+                "Keyboard shortcuts not available. "
+                "Install pynput for X11 or ensure xdg-desktop-portal is running for Wayland."
+            )
+
+    def _start_wayland(self, callback: Callable) -> None:
+        """Start listening using Wayland XDG Desktop Portal."""
+        self._use_wayland = True
+        self.callback = callback
+        self._running = True
+
+        self._wayland_session = WaylandShortcutSession()
+
+        if not self._wayland_session.is_available():
+            print("Wayland GlobalShortcuts portal not available")
+            # Fallback to X11 if available
+            if KEYBOARD_AVAILABLE:
+                print("Falling back to X11...")
+                self._start_x11(callback)
             return
 
+        if not self._wayland_session.start():
+            print("Failed to start Wayland shortcut session")
+            return
+
+        # Register the shortcut with a unique ID
+        shortcut_id = f"aipp_opener_{self.shortcut.replace('<', '_').replace('>', '_')}"
+        description = f"AIpp Opener - {self.shortcut}"
+
+        # Convert shortcut format for Wayland
+        wayland_trigger = self._convert_to_wayland_format(self.shortcut)
+
+        if self._wayland_session.register_callback(
+            shortcut_id, callback, description
+        ):
+            logger.info(f"Registered Wayland shortcut: {shortcut_id} ({wayland_trigger})")
+        else:
+            logger.warning("Failed to register Wayland shortcut")
+
+    def _start_x11(self, callback: Callable) -> None:
+        """Start listening using X11/pynput."""
+        self._use_wayland = False
         self.callback = callback
         self._running = True
 
@@ -124,10 +199,38 @@ class KeyboardShortcut:
         self.listener = keyboard.Listener(on_press=on_press, on_release=on_release)
         self.listener.start()
 
+    def _convert_to_wayland_format(self, shortcut: str) -> str:
+        """
+        Convert shortcut string to Wayland XDG format.
+
+        Args:
+            shortcut: Shortcut in pynput format (e.g., "<ctrl><alt>space")
+
+        Returns:
+            Shortcut in XDG format (e.g., "<Ctrl><Alt>space")
+        """
+        # XDG format uses capitalized modifier names
+        result = shortcut
+        replacements = {
+            "<ctrl>": "<Ctrl>",
+            "<alt>": "<Alt>",
+            "<shift>": "<Shift>",
+            "<super>": "<Super>",
+            "<cmd>": "<Super>",
+            "<win>": "<Super>",
+        }
+        for old, new in replacements.items():
+            result = result.replace(old, new)
+        return result
+
     def stop(self) -> None:
         """Stop listening for keyboard shortcuts."""
         self._running = False
-        if self.listener:
+
+        if self._use_wayland and self._wayland_session:
+            self._wayland_session.stop()
+            self._wayland_session = None
+        elif self.listener:
             self.listener.stop()
             self.listener = None
 
