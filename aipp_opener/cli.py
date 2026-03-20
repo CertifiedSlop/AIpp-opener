@@ -473,6 +473,21 @@ Examples:
         help="Disable a plugin",
     )
     parser.add_argument(
+        "--verify-plugin",
+        metavar="NAME=HASH",
+        help="Verify a plugin's integrity with SHA256 hash",
+    )
+    parser.add_argument(
+        "--mark-plugin-verified",
+        metavar="NAME",
+        help="Mark a plugin as verified by the user",
+    )
+    parser.add_argument(
+        "--list-unverified-plugins",
+        action="store_true",
+        help="List plugins that haven't been verified",
+    )
+    parser.add_argument(
         "--web-search",
         metavar="QUERY",
         help="Search the web for an application (fallback when app not found)",
@@ -619,6 +634,42 @@ Examples:
             print(f"Disabled plugin: {args.disable_plugin}")
         else:
             print(f"Could not disable plugin: {args.disable_plugin}")
+        return
+
+    # Handle --verify-plugin
+    if args.verify_plugin:
+        plugin_manager.load_all_plugins()
+        if "=" not in args.verify_plugin:
+            print("Error: Must be in format NAME=HASH")
+            return
+        name, expected_hash = args.verify_plugin.split("=", 1)
+        if plugin_manager.verify_plugin(name.strip(), expected_hash.strip()):
+            print(f"Plugin {name.strip()} verified successfully")
+        else:
+            print(f"Plugin {name.strip()} verification failed")
+        return
+
+    # Handle --mark-plugin-verified
+    if args.mark_plugin_verified:
+        plugin_manager.load_all_plugins()
+        if plugin_manager.mark_plugin_verified(args.mark_plugin_verified):
+            print(f"Plugin {args.mark_plugin_verified} marked as verified")
+        else:
+            print(f"Could not mark plugin as verified: {args.mark_plugin_verified}")
+        return
+
+    # Handle --list-unverified-plugins
+    if args.list_unverified_plugins:
+        plugin_manager.load_all_plugins()
+        unverified = plugin_manager.list_unverified_plugins()
+        if unverified:
+            print(f"Unverified plugins ({len(unverified)}):")
+            for name in unverified:
+                plugin = plugin_manager.get_plugin(name)
+                if plugin:
+                    print(f"  - {name} (v{plugin.version})")
+        else:
+            print("All plugins are verified")
         return
 
     # Handle --list-apps
