@@ -341,5 +341,114 @@ class TestGroups(unittest.TestCase):
         self.assertFalse(result)
 
 
+class TestProfiler(unittest.TestCase):
+    """Test the performance profiler (aipp_opener/profiler.py)."""
+
+    def setUp(self):
+        """Set up test fixtures."""
+        from aipp_opener.profiler import PerformanceProfiler
+
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.profiler = PerformanceProfiler(output_dir=Path(self.temp_dir.name))
+
+    def tearDown(self):
+        """Clean up test fixtures."""
+        self.temp_dir.cleanup()
+
+    def test_profile_block(self):
+        """Test profiling a code block."""
+        with self.profiler.profile_block("test_operation"):
+            time.sleep(0.01)  # Sleep 10ms
+
+        results = self.profiler.get_slowest(1)
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0].function_name, "test_operation")
+        self.assertGreater(results[0].total_time, 0.01)
+
+    def test_profile_function(self):
+        """Test profiling a function."""
+        @self.profiler.profile_function
+        def slow_function():
+            time.sleep(0.01)
+            return 42
+
+        result = slow_function()
+        self.assertEqual(result, 42)
+
+        results = self.profiler.get_slowest(1)
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0].function_name, "slow_function")
+
+    def test_profile_multiple_calls(self):
+        """Test profiling multiple calls."""
+        for _ in range(5):
+            with self.profiler.profile_block("repeated_op"):
+                time.sleep(0.005)
+
+        results = self.profiler.get_slowest(1)
+        self.assertEqual(results[0].call_count, 5)
+        self.assertGreaterEqual(results[0].total_time, 0.025)
+
+    def test_get_slowest(self):
+        """Test getting slowest operations."""
+        with self.profiler.profile_block("fast"):
+            pass
+
+        with self.profiler.profile_block("slow"):
+            time.sleep(0.01)
+
+        slowest = self.profiler.get_slowest(1)
+        self.assertEqual(len(slowest), 1)
+        self.assertEqual(slowest[0].function_name, "slow")
+
+    def test_save_profile(self):
+        """Test saving profile to file."""
+        with self.profiler.profile_block("test"):
+            pass
+
+        filepath = self.profiler.save_profile("test_profile")
+
+        self.assertTrue(filepath.exists())
+        self.assertIn("test_profile", filepath.name)
+        self.assertTrue(filepath.name.endswith(".json"))
+
+    def test_reset_profiler(self):
+        """Test resetting profiler."""
+        with self.profiler.profile_block("test"):
+            pass
+
+        self.profiler.reset()
+
+        results = self.profiler.get_slowest(1)
+        self.assertEqual(len(results), 0)
+
+    def test_profile_result_to_dict(self):
+        """Test ProfileResult serialization."""
+        from aipp_opener.profiler import ProfileResult
+
+        result = ProfileResult(
+            function_name="test_func",
+            total_time=0.1,
+            call_count=10,
+            time_per_call=0.01,
+            cumulative_time=0.1,
+        )
+
+        data = result.to_dict()
+
+        self.assertEqual(data["function_name"], "test_func")
+        self.assertEqual(data["call_count"], 10)
+        self.assertIn("total_time_ms", data)
+        self.assertIn("time_per_call_ms", data)
+
+    def test_print_report(self):
+        """Test printing profile report (smoke test)."""
+        with self.profiler.profile_block("test"):
+            pass
+
+        # Should not raise
+        self.profiler.print_report(limit=5)
+
+
 if __name__ == "__main__":
     unittest.main()

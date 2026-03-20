@@ -488,6 +488,17 @@ Examples:
         help="List plugins that haven't been verified",
     )
     parser.add_argument(
+        "--profile",
+        action="store_true",
+        help="Enable performance profiling",
+    )
+    parser.add_argument(
+        "--profile-output",
+        metavar="NAME",
+        default="profile",
+        help="Name for profile output file",
+    )
+    parser.add_argument(
         "--web-search",
         metavar="QUERY",
         help="Search the web for an application (fallback when app not found)",
@@ -549,6 +560,14 @@ Examples:
     log_level = getattr(logging, log_level_str.upper(), logging.INFO)
     LoggerConfig.setup(log_level=log_level)
     logger.info("AIpp Opener starting (log level: %s)", log_level_str)
+
+    # Initialize profiler if requested
+    profiler = None
+    if args.profile:
+        from aipp_opener.profiler import PerformanceProfiler
+        profiler = PerformanceProfiler()
+        profiler.start_profiling()
+        logger.info("Performance profiling enabled")
 
     # Override provider if specified
     if args.provider:
@@ -873,19 +892,26 @@ Examples:
     # Handle --interactive or no command
     if args.interactive or not args.command:
         interactive_mode(detector, ai_provider, executor, nlp, history, config)
-        return
 
     # Handle single command
-    result = process_command(
-        args.command,
-        detector,
-        ai_provider,
-        executor,
-        nlp,
-        history,
-        config.get().max_suggestions,
-    )
-    print(result)
+    else:
+        result = process_command(
+            args.command,
+            detector,
+            ai_provider,
+            executor,
+            nlp,
+            history,
+            config.get().max_suggestions,
+        )
+        print(result)
+
+    # Print and save profile report if profiling was enabled
+    if profiler:
+        profiler.stop_profiling()
+        profiler.print_report()
+        profile_path = profiler.save_profile(args.profile_output)
+        print(f"Profile saved to: {profile_path}")
 
 
 if __name__ == "__main__":
