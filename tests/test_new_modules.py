@@ -229,7 +229,13 @@ class TestWebSearch(unittest.TestCase):
         """Set up test fixtures."""
         from aipp_opener.web_search import WebSearcher
 
-        self.searcher = WebSearcher(default_engine="google")
+        self.temp_file = tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.json')
+        self.temp_file.close()
+        self.searcher = WebSearcher(default_engine="google", config_path=Path(self.temp_file.name))
+
+    def tearDown(self):
+        """Clean up test fixtures."""
+        Path(self.temp_file.name).unlink(missing_ok=True)
 
     def test_search_url_generation(self):
         """Test search URL is generated correctly."""
@@ -240,7 +246,7 @@ class TestWebSearch(unittest.TestCase):
 
     def test_different_engines(self):
         """Test different search engines."""
-        engines = ["google", "duckduckgo", "bing", "github", "archwiki"]
+        engines = ["google", "duckduckgo", "bing", "github", "archwiki", "stackoverflow", "reddit"]
 
         for engine in engines:
             url = self.searcher.search("test", engine=engine, open_browser=False)
@@ -269,6 +275,96 @@ class TestWebSearch(unittest.TestCase):
 
         self.assertIsInstance(engines, list)
         self.assertGreater(len(engines), 0)
+
+    def test_add_custom_engine(self):
+        """Test adding a custom search engine."""
+        result = self.searcher.add_custom_engine(
+            "testengine",
+            "https://example.com/search?q={query}",
+            "Test Engine"
+        )
+
+        self.assertTrue(result)
+        self.assertIn("testengine", self.searcher.get_available_engines())
+
+    def test_add_custom_engine_invalid_url(self):
+        """Test adding custom engine with invalid URL."""
+        result = self.searcher.add_custom_engine(
+            "badengine",
+            "https://example.com/search",  # Missing {query}
+            "Bad Engine"
+        )
+
+        self.assertFalse(result)
+
+    def test_add_custom_engine_override_builtin(self):
+        """Test that built-in engines cannot be overridden."""
+        result = self.searcher.add_custom_engine(
+            "google",
+            "https://custom.google.com/search?q={query}",
+            "Custom Google"
+        )
+
+        self.assertFalse(result)
+
+    def test_remove_custom_engine(self):
+        """Test removing a custom search engine."""
+        # Add first
+        self.searcher.add_custom_engine(
+            "toremove",
+            "https://remove.example.com?q={query}",
+            "To Remove"
+        )
+
+        # Then remove
+        result = self.searcher.remove_custom_engine("toremove")
+
+        self.assertTrue(result)
+        self.assertNotIn("toremove", self.searcher.get_available_engines())
+
+    def test_remove_builtin_engine(self):
+        """Test that built-in engines cannot be removed."""
+        result = self.searcher.remove_custom_engine("google")
+
+        self.assertFalse(result)
+        self.assertIn("google", self.searcher.get_available_engines())
+
+    def test_list_custom_engines(self):
+        """Test listing custom engines."""
+        self.searcher.add_custom_engine("custom1", "https://c1.com?q={query}")
+        self.searcher.add_custom_engine("custom2", "https://c2.com?q={query}")
+
+        custom = self.searcher.list_custom_engines()
+
+        self.assertEqual(len(custom), 2)
+        names = [e.name for e in custom]
+        self.assertIn("custom1", names)
+        self.assertIn("custom2", names)
+
+    def test_get_engine_info(self):
+        """Test getting engine information."""
+        info = self.searcher.get_engine_info("google")
+
+        self.assertIsNotNone(info)
+        self.assertEqual(info.name, "google")
+        self.assertIn("google.com", info.url_template)
+
+    def test_custom_engine_persistence(self):
+        """Test that custom engines persist across instances."""
+        from aipp_opener.web_search import WebSearcher
+
+        self.searcher.add_custom_engine(
+            "persistent",
+            "https://persistent.example.com?q={query}",
+            "Persistent Engine"
+        )
+
+        # Create new instance with same config file
+        new_searcher = WebSearcher(config_path=Path(self.temp_file.name))
+
+        self.assertIn("persistent", new_searcher.get_available_engines())
+        info = new_searcher.get_engine_info("persistent")
+        self.assertEqual(info.description, "Persistent Engine")
 
 
 class TestPlugins(unittest.TestCase):

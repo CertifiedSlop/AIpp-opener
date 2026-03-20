@@ -508,6 +508,21 @@ Examples:
         metavar="NAME",
         help="Remove an app group",
     )
+    parser.add_argument(
+        "--add-search-engine",
+        metavar="NAME=URL",
+        help="Add a custom search engine (e.g., --add-search-engine 'nixpkgs=https://search.nixos.org/packages?query={query}')",
+    )
+    parser.add_argument(
+        "--list-search-engines",
+        action="store_true",
+        help="List all search engines (built-in and custom)",
+    )
+    parser.add_argument(
+        "--remove-search-engine",
+        metavar="NAME",
+        help="Remove a custom search engine",
+    )
 
     args = parser.parse_args()
 
@@ -700,6 +715,47 @@ Examples:
             print(f"Removed group: {args.remove_group}")
         else:
             print(f"Could not remove group '{args.remove_group}' (may be a default group)")
+        return
+
+    # Handle --add-search-engine
+    if args.add_search_engine:
+        web_searcher = WebSearcher()
+        if "=" not in args.add_search_engine:
+            print("Error: Search engine must be in format NAME=URL")
+            return
+        name, url = args.add_search_engine.split("=", 1)
+        if "{query}" not in url:
+            print("Error: URL must contain {query} placeholder")
+            return
+        if web_searcher.add_custom_engine(name.strip(), url.strip(), f"Custom engine: {name.strip()}"):
+            print(f"Added custom search engine: {name.strip()}")
+        else:
+            print(f"Could not add search engine '{name.strip()}'")
+        return
+
+    # Handle --list-search-engines
+    if args.list_search_engines:
+        web_searcher = WebSearcher()
+        engines = web_searcher.get_available_engines()
+        custom_engines = web_searcher.list_custom_engines()
+        custom_names = {e.name for e in custom_engines}
+
+        print(f"Search engines ({len(engines)} total):")
+        for engine_name in engines:
+            info = web_searcher.get_engine_info(engine_name)
+            if info:
+                marker = " (custom)" if engine_name in custom_names else ""
+                desc = f" - {info.description}" if info.description else ""
+                print(f"  {engine_name}{marker}{desc}")
+        return
+
+    # Handle --remove-search-engine
+    if args.remove_search_engine:
+        web_searcher = WebSearcher()
+        if web_searcher.remove_custom_engine(args.remove_search_engine):
+            print(f"Removed custom search engine: {args.remove_search_engine}")
+        else:
+            print(f"Could not remove search engine '{args.remove_search_engine}' (may be built-in or not found)")
         return
 
     # Handle --suggest
