@@ -373,7 +373,7 @@ class TestPlugins(unittest.TestCase):
     def setUp(self):
         """Set up test fixtures."""
         from aipp_opener.plugins import PluginManager
-        
+
         self.temp_dir = tempfile.TemporaryDirectory()
         self.manager = PluginManager(plugin_dir=Path(self.temp_dir.name))
 
@@ -384,89 +384,89 @@ class TestPlugins(unittest.TestCase):
     def test_register_plugin(self):
         """Test registering a plugin."""
         from aipp_opener.plugins import Plugin
-        
+
         class TestPlugin(Plugin):
             @property
             def name(self) -> str:
                 return "test_plugin"
-            
+
             @property
             def version(self) -> str:
                 return "1.0.0"
-        
+
         plugin = TestPlugin()
         self.manager.register_plugin(plugin)
-        
+
         retrieved = self.manager.get_plugin("test_plugin")
         self.assertEqual(retrieved, plugin)
 
     def test_unregister_plugin(self):
         """Test unregistering a plugin."""
         from aipp_opener.plugins import Plugin
-        
+
         class TestPlugin(Plugin):
             @property
             def name(self) -> str:
                 return "test_plugin"
-            
+
             @property
             def version(self) -> str:
                 return "1.0.0"
-        
+
         plugin = TestPlugin()
         self.manager.register_plugin(plugin)
         self.manager.unregister_plugin("test_plugin")
-        
+
         retrieved = self.manager.get_plugin("test_plugin")
         self.assertIsNone(retrieved)
 
     def test_get_all_plugins(self):
         """Test getting all plugins."""
         from aipp_opener.plugins import Plugin
-        
+
         class TestPlugin1(Plugin):
             @property
             def name(self) -> str:
                 return "test1"
-            
+
             @property
             def version(self) -> str:
                 return "1.0.0"
-        
+
         class TestPlugin2(Plugin):
             @property
             def name(self) -> str:
                 return "test2"
-            
+
             @property
             def version(self) -> str:
                 return "1.0.0"
-        
+
         self.manager.register_plugin(TestPlugin1())
         self.manager.register_plugin(TestPlugin2())
-        
+
         all_plugins = self.manager.get_all_plugins()
         self.assertEqual(len(all_plugins), 2)
 
     def test_get_enabled_plugins(self):
         """Test getting enabled plugins."""
         from aipp_opener.plugins import Plugin
-        
+
         class TestPlugin(Plugin):
             @property
             def name(self) -> str:
                 return "test_plugin"
-            
+
             @property
             def version(self) -> str:
                 return "1.0.0"
-        
+
         plugin = TestPlugin()
         self.manager.register_plugin(plugin, enabled=False)
-        
+
         enabled = self.manager.get_enabled_plugins()
         self.assertEqual(len(enabled), 0)
-        
+
         # Enable it
         self.manager.enable_plugin("test_plugin")
         enabled = self.manager.get_enabled_plugins()
@@ -475,7 +475,7 @@ class TestPlugins(unittest.TestCase):
     def test_plugin_stats(self):
         """Test getting plugin statistics."""
         stats = self.manager.get_stats()
-        
+
         self.assertIn("total_plugins", stats)
         self.assertIn("enabled_plugins", stats)
         self.assertIn("detector_plugins", stats)
@@ -485,28 +485,159 @@ class TestPlugins(unittest.TestCase):
     def test_plugin_info(self):
         """Test getting plugin info."""
         from aipp_opener.plugins import Plugin
-        
+
         class TestPlugin(Plugin):
             @property
             def name(self) -> str:
                 return "test_plugin"
-            
+
             @property
             def version(self) -> str:
                 return "1.0.0"
-            
+
             @property
             def description(self) -> str:
                 return "Test plugin description"
-        
+
         plugin = TestPlugin()
         self.manager.register_plugin(plugin)
-        
+
         info = self.manager.get_plugin_info("test_plugin")
-        
+
         self.assertEqual(info["name"], "test_plugin")
         self.assertEqual(info["version"], "1.0.0")
         self.assertEqual(info["description"], "Test plugin description")
+
+    def test_plugin_security_metadata(self):
+        """Test plugin security metadata."""
+        from typing import Optional
+        from aipp_opener.plugins import Plugin, PluginMetadata, PluginSecurityLevel
+
+        class SecurePlugin(Plugin):
+            @property
+            def name(self) -> str:
+                return "secure_plugin"
+
+            @property
+            def version(self) -> str:
+                return "1.0.0"
+
+            @property
+            def metadata(self) -> Optional[PluginMetadata]:
+                return PluginMetadata(
+                    name="secure_plugin",
+                    version="1.0.0",
+                    description="A secure plugin",
+                    author="Test Author",
+                    security_level=PluginSecurityLevel.RESTRICTED,
+                    permissions={"read_files"},
+                )
+
+        plugin = SecurePlugin()
+        self.manager.register_plugin(plugin)
+
+        # Metadata is saved when plugin has metadata property
+        # For in-memory plugins, we check the plugin directly
+        self.assertIsNotNone(plugin.metadata)
+        self.assertEqual(plugin.metadata.name, "secure_plugin")
+        self.assertEqual(plugin.metadata.security_level, PluginSecurityLevel.RESTRICTED)
+
+    def test_plugin_file_hash(self):
+        """Test plugin file hash calculation."""
+        # Create a test plugin file
+        plugin_file = Path(self.temp_dir.name) / "test_hash_plugin.py"
+        plugin_content = '''
+from aipp_opener.plugins import Plugin
+
+class TestHashPlugin(Plugin):
+    @property
+    def name(self):
+        return "test_hash"
+
+    @property
+    def version(self):
+        return "1.0.0"
+'''
+        plugin_file.write_text(plugin_content)
+
+        # Calculate hash
+        file_hash = self.manager._calculate_file_hash(plugin_file)
+
+        self.assertEqual(len(file_hash), 64)  # SHA256 hex length
+        self.assertTrue(all(c in "0123456789abcdef" for c in file_hash))
+
+    def test_plugin_validation(self):
+        """Test plugin file validation."""
+        # Create a valid plugin file
+        valid_plugin = Path(self.temp_dir.name) / "valid_plugin.py"
+        valid_plugin.write_text("""
+from aipp_opener.plugins import Plugin
+
+class ValidPlugin(Plugin):
+    @property
+    def name(self): return "valid"
+    @property
+    def version(self): return "1.0"
+""")
+
+        is_valid, error = self.manager._validate_plugin_file(valid_plugin)
+        self.assertTrue(is_valid)
+
+    def test_plugin_validation_too_large(self):
+        """Test plugin validation rejects large files."""
+        large_plugin = Path(self.temp_dir.name) / "large_plugin.py"
+
+        # Create a file larger than 1MB
+        with open(large_plugin, "w") as f:
+            f.write("x" * (1024 * 1024 + 1))
+
+        is_valid, error = self.manager._validate_plugin_file(large_plugin)
+        self.assertFalse(is_valid)
+        self.assertIn("too large", error.lower())
+
+    def test_mark_plugin_verified(self):
+        """Test marking plugin as verified."""
+        from aipp_opener.plugins import Plugin
+
+        class TestPlugin(Plugin):
+            @property
+            def name(self) -> str:
+                return "verify_test"
+
+            @property
+            def version(self) -> str:
+                return "1.0.0"
+
+        plugin = TestPlugin()
+        self.manager.register_plugin(plugin)
+
+        # Mark as verified
+        result = self.manager.mark_plugin_verified("verify_test")
+        self.assertTrue(result)
+
+        # Check metadata
+        metadata = self.manager.get_plugin_metadata("verify_test")
+        self.assertIsNotNone(metadata)
+        self.assertTrue(metadata.is_verified)
+
+    def test_list_unverified_plugins(self):
+        """Test listing unverified plugins."""
+        from aipp_opener.plugins import Plugin
+
+        class UnverifiedPlugin(Plugin):
+            @property
+            def name(self) -> str:
+                return "unverified_test"
+
+            @property
+            def version(self) -> str:
+                return "1.0.0"
+
+        plugin = UnverifiedPlugin()
+        self.manager.register_plugin(plugin)
+
+        unverified = self.manager.list_unverified_plugins()
+        self.assertIn("unverified_test", unverified)
 
 
 if __name__ == "__main__":
