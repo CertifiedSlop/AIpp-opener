@@ -1,21 +1,21 @@
 # AIpp Opener
 
-**AI-powered application launcher for Linux (NixOS/Debian)**
+**AI-powered application launcher for Linux (NixOS/Debian/Fedora/Arch)**
 
 Open applications using natural language commands. AIpp Opener intelligently recognizes installed apps, handles variations in app names, and provides suggestions if the requested app is not found.
 
-![Version](https://img.shields.io/badge/version-0.2.0-blue)
+![Version](https://img.shields.io/badge/version-0.6.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
-![Python](https://img.shields.io/badge/python-3.8+-blue)
+![Python](https://img.shields.io/badge/python-3.9+-blue)
 ![Platform](https://img.shields.io/badge/platform-Linux-lightgrey)
 
 ## ✨ Features
 
 - 🎯 **Natural Language Interface** - Type or speak commands like "open Firefox" or "launch VS Code"
-- 🖥️ **GUI Frontend** - Beautiful tkinter-based interface with search and categories
+- 🖥️ **GUI Frontend** - Beautiful tkinter-based interface with search, categories, and dark/light theme
 - 🤖 **AI-Powered Suggestions** - Get closest matches when app names don't exactly match
 - 🎤 **Voice Input** - Open apps using voice commands
-- ⌨️ **Keyboard Shortcuts** - Global hotkey (Ctrl+Alt+Space) for instant access
+- ⌨️ **Keyboard Shortcuts** - Global hotkey (Ctrl+Alt+Space) for instant access with X11/Wayland support
 - 📱 **System Tray** - Run in background with quick access menu
 - 📂 **App Categories** - 15+ categories: Browser, Editor, IDE, Media, Graphics, etc.
 - ⭐ **Favorites** - Pin frequently used apps for quick access
@@ -25,6 +25,13 @@ Open applications using natural language commands. AIpp Opener intelligently rec
 - 🐳 **Docker Support** - Containerized testing with Ollama
 - 🔧 **Cross-Shell Compatible** - Works in Bash, Zsh, Fish, and more
 - 🌐 **Multiple AI Providers** - Ollama (local), Gemini, OpenAI, OpenRouter
+- 🔌 **Plugin System** - Extend functionality with custom plugins (app detectors, commands, result modifiers)
+- 🔒 **Plugin Security** - Sandboxed plugin loading with SHA256 verification and dangerous pattern detection
+- 🔍 **Custom Search Engines** - Add your own search engines or use 7 built-in options
+- 📁 **Recent Files** - Quick access to recently opened documents, images, code files
+- 🌐 **Browser Tabs** - Detect and switch to open browser tabs (Firefox, Chrome, Chromium, Brave, Edge)
+- 🎮 **App Groups** - Launch multiple apps together (dev workspace, media setup, etc.)
+- 🔗 **Custom Aliases** - Define shortcuts for commonly used commands
 
 ## 📦 Installation
 
@@ -76,6 +83,22 @@ pip install -e ".[keyboard]"
 
 # Everything
 pip install -e ".[all]"
+
+# With development tools
+pip install -e ".[dev]"
+```
+
+### System Dependencies
+
+```bash
+# Debian/Ubuntu
+sudo apt install python3-dbus python3-gi  # For Wayland plugin security
+
+# Fedora
+sudo dnf install python3-dbus python3-gobject
+
+# Arch Linux
+sudo pacman -S python-dbus python-gobject
 ```
 
 ### Docker/Podman
@@ -116,6 +139,26 @@ python -m aipp_opener --voice
 
 # Quick launcher with keyboard shortcut
 python -m aipp_opener --shortcut
+
+# Web search fallback
+python -m aipp_opener --web-search "vs code"
+
+# Manage custom aliases
+python -m aipp_opener --alias "ff=firefox"
+python -m aipp_opener --list-aliases
+
+# Launch app groups
+python -m aipp_opener --group dev
+python -m aipp_opener --create-group "mygroup=code,firefox,term"
+
+# Manage plugins
+python -m aipp_opener --plugins
+python -m aipp_opener --enable-plugin recent_files
+python -m aipp_opener --verify-plugin "myplugin=abc123..."
+
+# Custom search engines
+python -m aipp_opener --add-search-engine "nixpkgs=https://search.nixos.org/packages?query={query}"
+python -m aipp_opener --list-search-engines
 ```
 
 ### System Tray Mode
@@ -254,6 +297,75 @@ Get API key from [Google AI Studio](https://makersuite.google.com/app/apikey).
 
 Get API key from [OpenRouter](https://openrouter.ai/).
 
+## 🔌 Plugins
+
+AIpp Opener supports a extensible plugin system with security features.
+
+### Plugin Types
+
+1. **AppDetectorPlugin** - Detect additional applications on your system
+2. **CommandPlugin** - Add custom commands
+3. **ResultModifierPlugin** - Modify execution results (e.g., add notifications)
+
+### Built-in Plugins
+
+- `custom_commands` - System utilities (update, cache clear, IP check, weather)
+- `docker_detector` - Detect running Docker containers
+- `notification_modifier` - Desktop notifications on app launch
+- `recent_files` - GTK recent documents
+- `browser_tabs` - Open browser tabs (Firefox, Chrome, Chromium, Brave, Edge)
+
+### Plugin Management
+
+```bash
+# List all plugins
+python -m aipp_opener --plugins
+
+# Get plugin information
+python -m aipp_opener --plugin-info plugin_name
+
+# Enable/disable plugins
+python -m aipp_opener --enable-plugin recent_files
+python -m aipp_opener --disable-plugin docker_detector
+
+# Security: Verify plugin integrity
+python -m aipp_opener --verify-plugin "plugin_name=sha256_hash"
+python -m aipp_opener --mark-plugin-verified plugin_name
+python -m aipp_opener --list-unverified-plugins
+```
+
+### Plugin Security
+
+Plugins are validated for security:
+- File size limit (1MB max)
+- Dangerous pattern detection (eval, exec, subprocess)
+- SHA256 hash verification
+- Security levels: sandboxed, restricted, trusted
+
+See [PLUGIN_DEVELOPMENT.md](PLUGIN_DEVELOPMENT.md) for plugin development guide.
+
+## 🔍 Custom Search Engines
+
+When an app is not found, AIpp Opener can search the web. Seven search engines are built-in:
+
+- google, duckduckgo, bing, github, archwiki, stackoverflow, reddit
+
+Add custom search engines:
+
+```bash
+# Add NixOS package search
+python -m aipp_opener --add-search-engine "nixpkgs=https://search.nixos.org/packages?query={query}"
+
+# Add custom documentation search
+python -m aipp_opener --add-search-engine "docs=https://docs.example.com/search?q={query}"
+
+# List all engines
+python -m aipp_opener --list-search-engines
+
+# Remove custom engine
+python -m aipp_opener --remove-search-engine nixpkgs
+```
+
 ## 📱 App Categories
 
 AIpp Opener automatically categorizes applications:
@@ -315,24 +427,38 @@ aipp_opener/
 ├── cli.py              # Command-line interface
 ├── gui.py              # GUI frontend (tkinter)
 ├── tray.py             # System tray integration
-├── keyboard.py         # Keyboard shortcuts
+├── keyboard.py         # Keyboard shortcuts (X11/Wayland)
+├── wayland_shortcuts.py # Wayland XDG Desktop Portal support
 ├── config.py           # Configuration (pydantic)
 ├── executor.py         # Application execution
 ├── voice.py            # Voice input
 ├── history.py          # Usage history
 ├── categories.py       # App categorization
 ├── icons.py            # Icon detection
+├── cache.py            # Caching layer with TTL
+├── aliases.py          # Custom command aliases
+├── groups.py           # App groups/workspaces
+├── web_search.py       # Web search with custom engines
+├── plugins.py          # Plugin system with security
 ├── detectors/          # App detection modules
 │   ├── base.py         # Abstract detector
-│   ├── nixos.py        # NixOS detection
-│   └── debian.py       # Debian detection
-└── ai/                 # AI/NLP processing
-    ├── base.py         # AI provider interface
-    ├── ollama.py       # Ollama (local)
-    ├── gemini.py       # Google Gemini
-    ├── openai.py       # OpenAI
-    ├── openrouter.py   # OpenRouter
-    └── nlp.py          # NLP utilities
+│   ├── nixos.py        # NixOS detection (cached)
+│   ├── debian.py       # Debian detection (cached)
+│   ├── fedora.py       # Fedora/RHEL detection (cached)
+│   └── arch.py         # Arch Linux detection (cached)
+├── ai/                 # AI/NLP processing
+│   ├── base.py         # AI provider interface
+│   ├── ollama.py       # Ollama (local)
+│   ├── gemini.py       # Google Gemini
+│   ├── openai.py       # OpenAI
+│   ├── openrouter.py   # OpenRouter
+│   └── nlp.py          # NLP utilities
+└── plugins/            # User plugins directory
+    ├── custom_commands.py
+    ├── docker_detector.py
+    ├── notification_modifier.py
+    ├── recent_files.py
+    └── browser_tabs.py
 ```
 
 ## 🧪 Testing
@@ -345,8 +471,23 @@ python -m pytest tests/
 python -m pytest tests/ --cov=aipp_opener
 
 # Test specific module
-python -m pytest tests/test_aipp_opener.py::TestNLPProcessor
+python -m pytest tests/test_new_modules.py
+
+# Current test status: 43 tests passing
 ```
+
+## 📊 Test Coverage
+
+| Module | Coverage |
+|--------|----------|
+| web_search.py | 93% |
+| plugins.py | 62% |
+| aliases.py | 61% |
+| groups.py | 57% |
+| cache.py | 70% |
+| **Overall** | 13% |
+
+Target: 80% coverage for Phase 4.
 
 ## 🔧 Troubleshooting
 
@@ -443,9 +584,36 @@ Contributions are welcome!
 
 - **[CONTRIBUTING.md](CONTRIBUTING.md)** - Contribution guidelines, development setup, code style, and testing instructions
 - **[CHANGELOG.md](CHANGELOG.md)** - Version history and release notes
+- **[PLUGIN_DEVELOPMENT.md](PLUGIN_DEVELOPMENT.md)** - Plugin development guide and API reference
 - **[IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md)** - Technical implementation details for v0.3.0
 - **[CONTAINER_TESTING.md](CONTAINER_TESTING.md)** - Guide for testing in Docker/Podman containers
 - **[PROJECT.md](PROJECT.md)** - Project overview and quick reference
+
+## 🗺️ Roadmap
+
+### Phase 4 [v0.6.0] - Current
+- ✅ Custom search engines with user-defined options
+- ✅ Plugin security model with sandboxing
+- ✅ Sample plugins (recent files, browser tabs)
+- 🔄 Test coverage expansion (target: 80%)
+- ⏳ Performance profiling tools
+
+### Phase 5 [v0.7.0] - Future
+- Async/await patterns for I/O operations
+- Systemd user service for background operations
+- Flatpak/Snap packaging
+- Enhanced AI features (context-aware suggestions)
+
+## 📈 Recent Changes (v0.6.0)
+
+- **Plugin System** - Extensible plugin architecture with security model
+- **Custom Search Engines** - Add your own search engines or use 7 built-in options
+- **Recent Files Plugin** - Quick access to GTK recent documents
+- **Browser Tabs Plugin** - Detect and switch to open browser tabs
+- **Wayland Support** - Global keyboard shortcuts via XDG Desktop Portal
+- **Fedora/Arch Support** - App detection for additional Linux distributions
+- **Caching Layer** - 10-minute TTL cache for faster app detection
+- **Lazy Loading GUI** - Non-blocking startup (~100ms)
 
 ## 🙏 Acknowledgments
 
