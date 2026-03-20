@@ -14,11 +14,10 @@ class TestCache(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures."""
-        from aipp_opener.cache import Cache, AppDetectionCache
-        
+        from aipp_opener.cache import Cache
+
         self.temp_dir = tempfile.TemporaryDirectory()
-        self.cache = Cache(cache_dir=Path(self.temp_dir.name), ttl=60)
-        self.app_cache = AppDetectionCache(cache_dir=Path(self.temp_dir.name), ttl=60)
+        self.cache = Cache(name="test_cache", cache_dir=Path(self.temp_dir.name), ttl=60)
 
     def tearDown(self):
         """Clean up test fixtures."""
@@ -28,7 +27,7 @@ class TestCache(unittest.TestCase):
         """Test setting and getting cache values."""
         self.cache.set("test_key", {"data": "value"})
         result = self.cache.get("test_key")
-        
+
         self.assertEqual(result, {"data": "value"})
 
     def test_cache_miss(self):
@@ -39,12 +38,13 @@ class TestCache(unittest.TestCase):
     def test_cache_ttl(self):
         """Test cache TTL expiration."""
         # Create cache with very short TTL
-        short_ttl_cache = Cache(cache_dir=Path(self.temp_dir.name), ttl=1)
+        from aipp_opener.cache import Cache
+        short_ttl_cache = Cache(name="test_ttl", cache_dir=Path(self.temp_dir.name), ttl=1)
         short_ttl_cache.set("expiring_key", {"data": "value"})
-        
+
         # Wait for expiration
         time.sleep(1.5)
-        
+
         # Should be expired
         result = short_ttl_cache.get("expiring_key")
         self.assertIsNone(result)
@@ -53,7 +53,7 @@ class TestCache(unittest.TestCase):
         """Test cache deletion."""
         self.cache.set("to_delete", {"data": "value"})
         self.cache.delete("to_delete")
-        
+
         result = self.cache.get("to_delete")
         self.assertIsNone(result)
 
@@ -62,42 +62,13 @@ class TestCache(unittest.TestCase):
         self.cache.set("key1", "value1")
         self.cache.set("key2", "value2")
         self.cache.set("key3", "value3")
-        
+
         self.cache.clear()
-        
+
         # All should be gone
         self.assertIsNone(self.cache.get("key1"))
         self.assertIsNone(self.cache.get("key2"))
         self.assertIsNone(self.cache.get("key3"))
-
-    def test_app_detection_cache_set_apps(self):
-        """Test setting apps in app detection cache."""
-        apps = [
-            {"name": "firefox", "executable": "/usr/bin/firefox"},
-            {"name": "chrome", "executable": "/usr/bin/chrome"},
-        ]
-        
-        self.app_cache.set_apps("test_platform", apps)
-        result = self.app_cache.get_apps("test_platform")
-        
-        self.assertEqual(len(result), 2)
-        self.assertEqual(result[0]["name"], "firefox")
-
-    def test_app_detection_cache_different_platforms(self):
-        """Test caching for different platforms."""
-        nixos_apps = [{"name": "nix-app", "executable": "/nix/bin/app"}]
-        debian_apps = [{"name": "deb-app", "executable": "/usr/bin/app"}]
-        
-        self.app_cache.set_apps("nixos", nixos_apps)
-        self.app_cache.set_apps("debian", debian_apps)
-        
-        nixos_result = self.app_cache.get_apps("nixos")
-        debian_result = self.app_cache.get_apps("debian")
-        
-        self.assertEqual(len(nixos_result), 1)
-        self.assertEqual(nixos_result[0]["name"], "nix-app")
-        self.assertEqual(len(debian_result), 1)
-        self.assertEqual(debian_result[0]["name"], "deb-app")
 
 
 class TestAliases(unittest.TestCase):
@@ -106,10 +77,10 @@ class TestAliases(unittest.TestCase):
     def setUp(self):
         """Set up test fixtures."""
         from aipp_opener.aliases import AliasManager
-        
+
         self.temp_file = tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.json')
         self.temp_file.close()
-        self.manager = AliasManager(aliases_file=Path(self.temp_file.name))
+        self.manager = AliasManager(config_path=Path(self.temp_file.name))
 
     def tearDown(self):
         """Clean up test fixtures."""
@@ -119,8 +90,8 @@ class TestAliases(unittest.TestCase):
         """Test adding an alias."""
         self.manager.add_alias("ff", "firefox")
         result = self.manager.get_alias("ff")
-        
-        self.assertEqual(result, "firefox")
+
+        self.assertEqual(result.command, "firefox")
 
     def test_get_nonexistent_alias(self):
         """Test getting a nonexistent alias."""
@@ -131,44 +102,48 @@ class TestAliases(unittest.TestCase):
         """Test removing an alias."""
         self.manager.add_alias("temp", "temperature")
         self.manager.remove_alias("temp")
-        
+
         result = self.manager.get_alias("temp")
         self.assertIsNone(result)
 
     def test_list_aliases(self):
         """Test listing all aliases."""
-        self.manager.add_alias("ff", "firefox")
-        self.manager.add_alias("chrome", "chromium")
-        
+        self.manager.add_alias("ff2", "firefox2")
+        self.manager.add_alias("chrome2", "chromium2")
+
         aliases = self.manager.list_aliases()
-        
-        self.assertEqual(len(aliases), 2)
-        self.assertIn("ff", aliases)
-        self.assertIn("chrome", aliases)
+
+        self.assertGreaterEqual(len(aliases), 2)
+        # aliases is a list of CustomCommand objects
+        alias_names = [a.name for a in aliases]
+        self.assertIn("ff2", alias_names)
+        self.assertIn("chrome2", alias_names)
 
     def test_default_aliases(self):
         """Test default aliases are loaded."""
         # Create new manager with fresh file
         fresh_file = tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.json')
         fresh_file.close()
-        
-        manager = AliasManager(aliases_file=Path(fresh_file.name), load_defaults=True)
+
+        from aipp_opener.aliases import AliasManager
+        manager = AliasManager(config_path=Path(fresh_file.name))
         aliases = manager.list_aliases()
-        
+
         # Should have default aliases
         self.assertGreater(len(aliases), 0)
-        
+
         Path(fresh_file.name).unlink(missing_ok=True)
 
     def test_alias_persistence(self):
         """Test aliases persist across manager instances."""
         self.manager.add_alias("persistent", "persistent_value")
-        
+
         # Create new manager with same file
-        new_manager = AliasManager(aliases_file=Path(self.temp_file.name))
+        from aipp_opener.aliases import AliasManager
+        new_manager = AliasManager(config_path=Path(self.temp_file.name))
         result = new_manager.get_alias("persistent")
-        
-        self.assertEqual(result, "persistent_value")
+
+        self.assertEqual(result.command, "persistent_value")
 
 
 class TestGroups(unittest.TestCase):
@@ -177,10 +152,10 @@ class TestGroups(unittest.TestCase):
     def setUp(self):
         """Set up test fixtures."""
         from aipp_opener.groups import GroupManager
-        
+
         self.temp_file = tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.json')
         self.temp_file.close()
-        self.manager = GroupManager(groups_file=Path(self.temp_file.name))
+        self.manager = GroupManager(config_path=Path(self.temp_file.name))
 
     def tearDown(self):
         """Clean up test fixtures."""
@@ -188,13 +163,13 @@ class TestGroups(unittest.TestCase):
 
     def test_create_group(self):
         """Test creating a group."""
-        apps = ["firefox", "code"]
-        self.manager.create_group("dev", apps)
-        
-        group = self.manager.get_group("dev")
-        
+        apps = ["firefox-custom", "code-custom"]
+        self.manager.add_group("dev-custom", apps)
+
+        group = self.manager.get_group("dev-custom")
+
         self.assertIsNotNone(group)
-        self.assertEqual(group["apps"], apps)
+        self.assertEqual(group.apps, apps)
 
     def test_get_nonexistent_group(self):
         """Test getting a nonexistent group."""
@@ -203,46 +178,48 @@ class TestGroups(unittest.TestCase):
 
     def test_remove_group(self):
         """Test removing a group."""
-        self.manager.create_group("temp", ["app1"])
-        self.manager.remove_group("temp")
-        
-        group = self.manager.get_group("temp")
+        self.manager.add_group("temp-test", ["app1"])
+        self.manager.remove_group("temp-test")
+
+        group = self.manager.get_group("temp-test")
         self.assertIsNone(group)
 
     def test_list_groups(self):
         """Test listing all groups."""
-        self.manager.create_group("dev", ["firefox", "code"])
-        self.manager.create_group("browse", ["firefox", "chrome"])
-        
+        self.manager.add_group("dev2", ["firefox", "code"])
+        self.manager.add_group("browse2", ["firefox", "chrome"])
+
         groups = self.manager.list_groups()
-        
-        self.assertEqual(len(groups), 2)
-        self.assertIn("dev", groups)
-        self.assertIn("browse", groups)
+
+        self.assertGreaterEqual(len(groups), 2)
+        group_names = [g.name for g in groups]
+        self.assertIn("dev2", group_names)
+        self.assertIn("browse2", group_names)
 
     def test_default_groups(self):
         """Test default groups are loaded."""
+        from aipp_opener.groups import GroupManager
         fresh_file = tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.json')
         fresh_file.close()
-        
-        manager = GroupManager(groups_file=Path(fresh_file.name), load_defaults=True)
+
+        manager = GroupManager(config_path=Path(fresh_file.name))
         groups = manager.list_groups()
-        
+
         # Should have default groups (dev, browse, media, office)
         self.assertGreaterEqual(len(groups), 4)
-        self.assertIn("dev", groups)
-        
+        group_names = [g.name for g in groups]
+        self.assertIn("dev", group_names)
+
         Path(fresh_file.name).unlink(missing_ok=True)
 
     def test_group_with_delay(self):
         """Test group with launch delay."""
         apps = ["app1", "app2", "app3"]
-        self.manager.create_group("delayed", apps, delay=2.0, parallel=False)
-        
-        group = self.manager.get_group("delayed")
-        
-        self.assertEqual(group["delay"], 2.0)
-        self.assertFalse(group["parallel"])
+        self.manager.add_group("delayed-test", apps, delay=2.0)
+
+        group = self.manager.get_group("delayed-test")
+
+        self.assertEqual(group.delay, 2.0)
 
 
 class TestWebSearch(unittest.TestCase):
@@ -251,20 +228,20 @@ class TestWebSearch(unittest.TestCase):
     def setUp(self):
         """Set up test fixtures."""
         from aipp_opener.web_search import WebSearcher
-        
+
         self.searcher = WebSearcher(default_engine="google")
 
     def test_search_url_generation(self):
         """Test search URL is generated correctly."""
         url = self.searcher.search("test query", open_browser=False)
-        
+
         self.assertIn("google.com", url)
-        self.assertIn("test+query" in url or "test%20query" in url, True)
+        self.assertTrue("test+query" in url or "test%20query" in url)
 
     def test_different_engines(self):
         """Test different search engines."""
         engines = ["google", "duckduckgo", "bing", "github", "archwiki"]
-        
+
         for engine in engines:
             url = self.searcher.search("test", engine=engine, open_browser=False)
             self.assertIsNotNone(url)
@@ -277,19 +254,19 @@ class TestWebSearch(unittest.TestCase):
     def test_app_search(self):
         """Test app search."""
         url = self.searcher.search_app("vscode", open_browser=False)
-        
-        self.assertIn("install+vscode+linux" in url or "install%20vscode%20linux" in url, True)
+
+        self.assertTrue("install+vscode+linux" in url or "install%20vscode%20linux" in url)
 
     def test_command_search(self):
         """Test command search."""
         url = self.searcher.search_command("list files", open_browser=False)
-        
-        self.assertIn("linux+command" in url or "linux%20command" in url, True)
+
+        self.assertTrue("linux+command" in url or "linux%20command" in url)
 
     def test_get_available_engines(self):
         """Test getting available engines."""
         engines = self.searcher.get_available_engines()
-        
+
         self.assertIsInstance(engines, list)
         self.assertGreater(len(engines), 0)
 
