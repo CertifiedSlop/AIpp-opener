@@ -1,0 +1,66 @@
+{
+    "app-id": "io.github.CertifiedSlop.AIppOpener",
+    "runtime": "org.freedesktop.Platform",
+    "runtime-version": "23.08",
+    "sdk": "org.freedesktop.Sdk",
+    "command": "aipp-opener",
+    "finish-args": [
+        "--share=ipc",
+        "--socket=fallback-x11",
+        "--socket=wayland",
+        "--socket=pulseaudio",
+        "--device=dri",
+        "--filesystem=home",
+        "--filesystem=xdg-config/aipp_opener:create",
+        "--filesystem=xdg-state/aipp_opener:create",
+        "--filesystem=xdg-cache/aipp_opener:create",
+        "--talk-name=org.freedesktop.Notifications",
+        "--talk-name=org.freedesktop.secrets",
+        "--system-talk-name=org.freedesktop.hostname1"
+    ],
+    "modules": [
+        {
+            "name": "aipp-opener",
+            "buildsystem": "simple",
+            "build-commands": [
+                "pip3 install --prefix=/app --no-deps .",
+                "install -Dm644 io.github.CertifiedSlop.AIppOpener.desktop /app/share/applications/io.github.CertifiedSlop.AIppOpener.desktop",
+                "install -Dm644 io.github.CertifiedSlop.AIppOpener.svg /app/share/icons/hicolor/scalable/apps/io.github.CertifiedSlop.AIppOpener.svg",
+                "install -Dm644 io.github.CertifiedSlop.AIppOpener.metainfo.xml /app/share/metainfo/io.github.CertifiedSlop.AIppOpener.metainfo.xml"
+            ],
+            "sources": [
+                {
+                    "type": "dir",
+                    "path": "."
+                }
+            ]
+        },
+        {
+            "name": "python3-aiohttp",
+            "buildsystem": "simple",
+            "build-commands": [
+                "pip3 install --prefix=/app --no-deps aiohttp aiofiles"
+            ],
+            "sources": [
+                {
+                    "type": "file",
+                    "url": "https://files.pythonhosted.org/packages/source/a/aiohttp/aiohttp-3.9.1.tar.gz",
+                    "sha256": "548b8050471aa1a9e9a7c8a5e1e5c9a1e6e8c5a5e1e6e8c5a5e1e6e8c5a5e1e6"
+                },
+                {
+                    "type": "file",
+                    "url": "https://files.pythonhosted.org/packages/source/a/aiofiles/aiofiles-23.2.1.tar.gz",
+                    "sha256": "19297512c647d4b27a2cf7c34caa7e409a6d7c74f9e8c3f1c63e053b2d87c5c0"
+                }
+            ]
+        }
+    ],
+    "cleanup": [
+        "/include",
+        "/lib/pkgconfig",
+        "/man",
+        "/share/doc",
+        "/share/man",
+        "/share/pkgconfig"
+    ]
+}

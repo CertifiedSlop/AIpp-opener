@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.CertifiedSlop.AIppOpener</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT</project_license>
+  <name>AIpp Opener</name>
+  <summary>AI-powered application launcher for Linux</summary>
+  
+  <description>
+    <p>
+      AIpp Opener is an intelligent application launcher that uses natural language processing
+      and AI to help you open applications quickly and efficiently.
+    </p>
+    <p>Features:</p>
+    <ul>
+      <li>Natural language commands ("open firefox", "launch vscode")</li>
+      <li>AI-powered app suggestions</li>
+      <li>Multiple interface options (CLI, GUI, system tray, voice)</li>
+      <li>Keyboard shortcuts (Ctrl+Alt+Space)</li>
+      <li>Web search fallback when apps aren't found</li>
+      <li>Custom command aliases</li>
+      <li>App groups/workspaces</li>
+      <li>Plugin system for extensibility</li>
+      <li>Dark/light theme support</li>
+      <li>Usage history and predictions</li>
+    </ul>
+  </description>
+  
+  <launchable type="desktop-id">io.github.CertifiedSlop.AIppOpener.desktop</launchable>
+  
+  <screenshots>
+    <screenshot type="default">
+      <caption>AIpp Opener GUI with search results</caption>
+    </screenshot>
+  </screenshots>
+  
+  <url type="homepage">https://github.com/CertifiedSlop/AIpp-opener</url>
+  <url type="bugtracker">https://github.com/CertifiedSlop/AIpp-opener/issues</url>
+  <url type="donation">https://github.com/sponsors/CertifiedSlop</url>
+  
+  <provides>
+    <binary>aipp-opener</binary>
+  </provides>
+  
+  <releases>
+    <release version="0.6.0" date="2026-03-20">
+      <description>
+        <p>Phase 4 Release - Enhanced Security and Performance</p>
+        <ul>
+          <li>Custom search engines with user-defined options</li>
+          <li>Plugin security model with sandboxing</li>
+          <li>Performance profiling tools</li>
+          <li>Sample plugins (recent files, browser tabs)</li>
+          <li>Expanded test coverage (32%, 132 tests)</li>
+        </ul>
+      </description>
+    </release>
+    <release version="0.5.0" date="2026-03-19">
+      <description>
+        <p>Phase 3 Release - Performance and Plugin System</p>
+        <ul>
+          <li>Performance optimization (lazy loading, caching, async)</li>
+          <li>Plugin system for extensibility</li>
+          <li>Wayland keyboard shortcut support</li>
+          <li>Additional Linux distribution support</li>
+        </ul>
+      </description>
+    </release>
+  </releases>
+  
+  <content_rating type="oars-1.1"/>
+  
+  <developer_name>CertifiedSlop</developer_name>
+  
+  <update_contact>certifiedslop@proton.me</update_contact>
+</component>

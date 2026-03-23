@@ -1,0 +1,12 @@
+[Unit]
+Description=AIpp Opener Cache Cleanup Timer
+Documentation=https://github.com/CertifiedSlop/AIpp-opener
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=daily
+AccuracySec=1h
+Persistent=true
+
+[Install]
+WantedBy=timers.target

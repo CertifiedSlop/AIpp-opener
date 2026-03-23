@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=AIpp Opener
+Comment=AI-powered application launcher
+Exec=aipp-opener --gui
+Icon=io.github.CertifiedSlop.AIppOpener
+Type=Application
+Categories=Utility;System;
+Keywords=launcher;ai;application;search;
+StartupNotify=true

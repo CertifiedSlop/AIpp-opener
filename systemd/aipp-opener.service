@@ -1,0 +1,39 @@
+[Unit]
+Description=AIpp Opener Background Service
+Documentation=https://github.com/CertifiedSlop/AIpp-opener
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=idle
+ExecStart=/usr/bin/python3 -m aipp_opener --tray
+Restart=on-failure
+RestartSec=5s
+TimeoutStopSec=10s
+
+# Security hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=read-only
+PrivateTmp=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictNamespaces=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+MemoryDenyWriteExecute=true
+LockPersonality=true
+
+# Allow write access to config directories
+ReadWritePaths=%h/.config/aipp_opener
+ReadWritePaths=%h/.local/state/aipp_opener
+ReadWritePaths=%h/.cache/aipp_opener
+
+# Environment
+Environment=PYTHONUNBUFFERED=1
+Environment=XDG_RUNTIME_DIR=%t
+
+[Install]
+WantedBy=default.target

@@ -98,7 +98,7 @@ class ArchAppDetector(AppDetector):
                     pkg_apps = self._get_package_executables(pkg)
                     for exec_name in pkg_apps:
                         if exec_name not in [a.executable for a in apps]:
-                            category = self.categorizer.get_category(exec_name)
+                            category = self.categorizer.categorize(exec_name)
                             apps.append(
                                 AppInfo(
                                     name=pkg,
@@ -231,7 +231,7 @@ class ArchAppDetector(AppDetector):
 
                 # Check if it's a GUI application
                 if self._is_gui_executable(executable):
-                    category = self.categorizer.get_category(name)
+                    category = self.categorizer.categorize(name)
                     apps.append(
                         AppInfo(
                             name=name,

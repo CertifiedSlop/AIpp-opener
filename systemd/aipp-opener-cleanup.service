@@ -1,0 +1,31 @@
+[Unit]
+Description=AIpp Opener Cache Cleanup Service
+Documentation=https://github.com/CertifiedSlop/AIpp-opener
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 -c "from aipp_opener.cache import Cache; from pathlib import Path; c = Cache('app_detection', cache_dir=Path.home()/'/.cache'/'aipp_opener'); c.cleanup_expired()"
+ExecStart=/usr/bin/python3 -c "from aipp_opener.history import HistoryManager; h = HistoryManager(); h.cleanup_old_entries()"
+
+# Security hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=read-only
+PrivateTmp=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictNamespaces=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+MemoryDenyWriteExecute=true
+LockPersonality=true
+
+# Allow write access to config directories
+ReadWritePaths=%h/.config/aipp_opener
+ReadWritePaths=%h/.local/state/aipp_opener
+ReadWritePaths=%h/.cache/aipp_opener
+
+[Install]
+WantedBy=timers.target
