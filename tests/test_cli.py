@@ -251,23 +251,45 @@ class TestMainFunction(unittest.TestCase):
         """Test CLI with --gui flag."""
         from aipp_opener.cli import main
 
-        # GUI requires display, so just test it doesn't crash with import error
-        with patch('sys.argv', ['aipp_opener', '--gui']):
-            try:
-                main()
-            except (SystemExit, ImportError, ModuleNotFoundError):
-                pass  # Expected - GUI may not be available in test environment
+        # GUI requires display, skip in CI
+        import os
+        if not os.environ.get('DISPLAY'):
+            self.skipTest("No display available")
+
+        with patch('aipp_opener.cli.AppLauncherGUI') as mock_gui:
+            mock_gui_instance = Mock()
+            mock_gui.return_value = mock_gui_instance
+            mock_gui_instance.run = Mock()
+
+            with patch('sys.argv', ['aipp_opener', '--gui']):
+                try:
+                    main()
+                except SystemExit:
+                    pass
+
+            mock_gui.assert_called_once()
 
     def test_main_with_tray_flag(self):
         """Test CLI with --tray flag."""
         from aipp_opener.cli import main
 
-        # Tray requires display, so just test it doesn't crash with import error
-        with patch('sys.argv', ['aipp_opener', '--tray']):
-            try:
-                main()
-            except (SystemExit, ImportError, ModuleNotFoundError):
-                pass  # Expected - Tray may not be available in test environment
+        # Tray requires display, skip in CI
+        import os
+        if not os.environ.get('DISPLAY'):
+            self.skipTest("No display available")
+
+        with patch('aipp_opener.cli.TrayApp') as mock_tray:
+            mock_tray_instance = Mock()
+            mock_tray.return_value = mock_tray_instance
+            mock_tray_instance.run = Mock()
+
+            with patch('sys.argv', ['aipp_opener', '--tray']):
+                try:
+                    main()
+                except SystemExit:
+                    pass
+
+            mock_tray.assert_called_once()
 
     def test_main_with_detect_flag(self):
         """Test CLI with --detect flag."""
