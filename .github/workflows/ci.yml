@@ -71,7 +71,7 @@ jobs:
         pip-audit || echo "Warning: Some dependencies may have known vulnerabilities"
 
     - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v4
+      uses: codecov/codecov-action@v5
       if: ${{ env.CODECOV_TOKEN != '' }}
       with:
         file: ./coverage.xml
