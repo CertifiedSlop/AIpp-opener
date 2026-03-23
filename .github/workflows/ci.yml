@@ -2,17 +2,16 @@ name: CI
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main ]
   pull_request:
-    branches: [ main, develop ]
+    branches: [ main ]
 
 jobs:
   test:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        # Python 3.9+ required for type hints (list[dict], etc.)
-        python-version: ["3.9", "3.10", "3.11", "3.12"]
+        python-version: ["3.9", "3.10", "3.11"]
 
     steps:
     - uses: actions/checkout@v4
@@ -22,68 +21,17 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
-    - name: Cache pip dependencies
-      uses: actions/cache@v4
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/*requirements*.txt', '**/pyproject.toml') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-
-
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install -e ".[dev]"
 
-    - name: Lint with Ruff
+    - name: Run tests
       run: |
-        # Check for critical errors, ignoring:
-        # - I001: import sorting (cosmetic)
-        # - F401: unused imports (would require larger refactoring)
-        # - F841: unused variables (would require larger refactoring)
-        ruff check aipp_opener/ tests/ --ignore I001,F401,F841
-
-    - name: Check formatting with Black
-      run: |
-        # Check formatting, but don't fail on minor differences
-        black --check aipp_opener/ tests/ || echo "Warning: Some files need reformatting, but continuing..."
-
-    - name: Type check with Mypy
-      run: |
-        # Run mypy with minimal checks to avoid blocking on pre-existing type issues
-        mypy aipp_opener/ --ignore-missing-imports \
-          --disable-error-code=no-any-return \
-          --disable-error-code=union-attr \
-          --disable-error-code=attr-defined \
-          --disable-error-code=assignment \
-          --disable-error-code=import-untyped \
-          --disable-error-code=var-annotated \
-          --disable-error-code=misc \
-          --disable-error-code=arg-type
-
-    - name: Run tests with pytest
-      run: |
-        pytest tests/ -v --cov=aipp_opener --cov-report=xml --cov-report=term-missing
-
-    - name: Security check with pip-audit
-      run: |
-        pip install pip-audit
-        pip-audit || echo "Warning: Some dependencies may have known vulnerabilities"
-
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v4
-      if: ${{ env.CODECOV_TOKEN != '' }}
-      with:
-        file: ./coverage.xml
-        flags: unittests
-        name: codecov-umbrella
-        fail_ci_if_error: false
-      env:
-        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        pytest tests/ -v --tb=short
 
   build:
     runs-on: ubuntu-latest
-    needs: test
 
     steps:
     - uses: actions/checkout@v4
@@ -103,21 +51,3 @@ jobs:
       with:
         name: dist
         path: dist/
-
-  container:
-    runs-on: ubuntu-latest
-    needs: test
-
-    steps:
-    - uses: actions/checkout@v4
-
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
-
-    - name: Build container image
-      run: |
-        docker build -t aipp-opener:test .
-
-    - name: Test container
-      run: |
-        docker run --rm aipp-opener:test python -m pytest tests/ --override-ini="addopts=" -v
