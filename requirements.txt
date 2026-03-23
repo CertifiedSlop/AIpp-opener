@@ -4,8 +4,8 @@ fuzzywuzzy>=0.18.0
 python-Levenshtein>=0.23.0
 
 # Async I/O
-aiohttp>=3.9.0
-aiofiles>=23.2.0
+aiohttp>=3.9.3
+aiofiles>=24.1.0
 
 # AI providers
 openai>=1.12.0
@@ -22,7 +22,7 @@ pyyaml>=6.0.1
 notify-py>=0.3.42
 
 # GUI dependencies
-pillow>=10.0.0
+pillow>=10.2.0
 
 # System tray (optional)
 pystray>=0.19.5
