@@ -1,0 +1,97 @@
+name: aipp-opener
+version: '0.7.0'
+summary: AI-powered application launcher for Linux
+description: |
+  AIpp Opener is an intelligent application launcher that uses natural language
+  processing to open applications. Simply type or speak commands like "open Firefox"
+  or "launch VS Code" and AIpp Opener will find and launch the right application.
+
+  Features:
+  - Natural language interface
+  - AI-powered suggestions
+  - Voice input support
+  - Keyboard shortcuts (Ctrl+Alt+Space)
+  - System tray integration
+  - Dark/light theme support
+  - 15+ app categories
+  - History and predictions
+  - Plugin system
+  - Cross-distribution support (NixOS, Debian, Fedora, Arch)
+
+base: core22
+confinement: strict
+
+parts:
+  aipp-opener:
+    plugin: python
+    source: .
+    python-packages:
+      - requests
+      - fuzzywuzzy
+      - python-Levenshtein
+      - pydantic
+      - pyyaml
+      - aiohttp
+      - aiofiles
+    build-packages:
+      - python3-dev
+    stage-packages:
+      - python3
+      - python3-tk
+      - notify-osd
+
+apps:
+  aipp-opener:
+    command: bin/aipp-opener
+    plugs:
+      - desktop
+      - desktop-legacy
+      - wayland
+      - x11
+      - unity7
+      - home
+      - network
+      - audio-record
+      - hardware-observe
+
+  gui:
+    command: bin/aipp-opener --gui
+    plugs:
+      - desktop
+      - desktop-legacy
+      - wayland
+      - x11
+      - unity7
+      - home
+
+  tray:
+    command: bin/aipp-opener --tray
+    plugs:
+      - desktop
+      - desktop-legacy
+      - wayland
+      - x11
+      - unity7
+
+  shortcut:
+    command: bin/aipp-opener --shortcut
+    plugs:
+      - desktop
+      - desktop-legacy
+      - wayland
+      - x11
+      - unity7
+
+plugs:
+  gtk-3-themes:
+    interface: content
+    target: $SNAP/data-dir/themes
+    default-provider: gtk-common-themes
+  icon-themes:
+    interface: content
+    target: $SNAP/data-dir/icons
+    default-provider: gtk-common-themes
+  sound-themes:
+    interface: content
+    target: $SNAP/data-dir/sounds
+    default-provider: gtk-common-themes
