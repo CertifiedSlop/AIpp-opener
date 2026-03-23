@@ -109,7 +109,7 @@ class SetupWizard:
         base_url = self._get_input("Base URL", default="http://localhost:11434")
 
         self.config.update(provider="ollama", model=model, base_url=base_url)
-        logger.info("Configured Ollama provider (model=%s)", model)
+        # Note: Not logging configuration details for security
 
     def _setup_gemini(self) -> None:
         """Setup Google Gemini provider."""
@@ -120,7 +120,7 @@ class SetupWizard:
         model = self._get_input("Model name", default="gemini-pro")
 
         self.config.update(provider="gemini", model=model, api_key=api_key)
-        logger.info("Configured Gemini provider (model=%s, api_key=***)", model)
+        # Note: Not logging api_key configuration for security
 
     def _setup_openai(self) -> None:
         """Setup OpenAI provider."""
@@ -134,7 +134,7 @@ class SetupWizard:
         self.config.update(provider="openai", model=model, api_key=api_key)
         if base_url:
             self.config.update(base_url=base_url)
-        logger.info("Configured OpenAI provider (model=%s, api_key=***)", model)
+        # Note: Not logging api_key configuration for security
 
     def _setup_openrouter(self) -> None:
         """Setup OpenRouter provider."""
@@ -145,7 +145,7 @@ class SetupWizard:
         model = self._get_input("Model name", default="meta-llama/llama-3-8b-instruct")
 
         self.config.update(provider="openrouter", model=model, api_key=api_key)
-        logger.info("Configured OpenRouter provider (model=%s, api_key=***)", model)
+        # Note: Not logging api_key configuration for security
 
     def _test_ai_provider(self) -> None:
         """Test the configured AI provider."""
