@@ -4,10 +4,12 @@
 
 Open applications using natural language commands. AIpp Opener intelligently recognizes installed apps, handles variations in app names, and provides suggestions if the requested app is not found.
 
-![Version](https://img.shields.io/badge/version-0.6.0-blue)
+![Version](https://img.shields.io/badge/version-0.7.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Python](https://img.shields.io/badge/python-3.9+-blue)
 ![Platform](https://img.shields.io/badge/platform-Linux-lightgrey)
+![Tests](https://img.shields.io/badge/tests-552%20passing-brightgreen)
+![Coverage](https://img.shields.io/badge/coverage-55%25-yellow)
 
 ## ✨ Features
 
@@ -32,6 +34,10 @@ Open applications using natural language commands. AIpp Opener intelligently rec
 - 🌐 **Browser Tabs** - Detect and switch to open browser tabs (Firefox, Chrome, Chromium, Brave, Edge)
 - 🎮 **App Groups** - Launch multiple apps together (dev workspace, media setup, etc.)
 - 🔗 **Custom Aliases** - Define shortcuts for commonly used commands
+- ⚡ **Async/Await Support** - High-performance async operations throughout the codebase
+- 🔧 **Systemd Integration** - User services for automatic startup and cleanup
+- 📦 **Flatpak Support** - Containerized deployment with Flathub-compatible packaging
+- 🧪 **Comprehensive Testing** - 552 tests with 55% code coverage
 
 ## 📦 Installation
 
@@ -464,30 +470,55 @@ aipp_opener/
 ## 🧪 Testing
 
 ```bash
-# Run unit tests
+# Run all tests
 python -m pytest tests/
 
 # Run with coverage
-python -m pytest tests/ --cov=aipp_opener
+python -m pytest tests/ --cov=aipp_opener --cov-report=term-missing
 
-# Test specific module
-python -m pytest tests/test_new_modules.py
+# Run specific test module
+python -m pytest tests/test_ai_modules.py -v
 
-# Current test status: 43 tests passing
+# Run async tests
+python -m pytest tests/test_async_ai_providers.py -v
+
+# Current test status: 552 tests passing ✅
 ```
 
 ## 📊 Test Coverage
 
-| Module | Coverage |
-|--------|----------|
-| web_search.py | 93% |
-| plugins.py | 62% |
-| aliases.py | 61% |
-| groups.py | 57% |
-| cache.py | 70% |
-| **Overall** | 13% |
+| Module | Coverage | Module | Coverage |
+|--------|----------|--------|----------|
+| categories.py | 99% | async_executor.py | 79% |
+| history.py | 97% | async_ai_providers.py | 76% |
+| web_search.py | 95% | cache.py | 78% |
+| ollama.py | 95% | icons.py | 79% |
+| nixos detector | 96% | plugins.py | 66% |
+| debian detector | 93% | groups.py | 63% |
+| async_history.py | 91% | aliases.py | 68% |
+| profiler.py | 89% | **Overall** | **55%** |
 
-Target: 80% coverage for Phase 4.
+**Test Suite:** 552 tests passing across 14 test modules
+
+### Test Modules
+
+- `test_phase5_async.py` - Async/await pattern tests (29 tests)
+- `test_cli.py` - CLI interface tests (23 tests)
+- `test_executor.py` - Application executor tests (24 tests)
+- `test_icons.py` - Icon detection tests (26 tests)
+- `test_detectors_extended.py` - Platform detector tests (79 tests)
+- `test_ai_modules.py` - AI provider tests (20 tests)
+- `test_async_ai_providers.py` - Async AI tests (29 tests)
+- `test_ui_modules.py` - UI module tests (26 tests)
+- `test_additional_modules.py` - Additional module tests (25 tests)
+- `test_integration.py` - Integration tests (21 tests)
+- `test_plugins.py` - Plugin system tests (37 tests)
+- `test_setup_wizard.py` - Setup wizard tests (28 tests)
+- `test_async_detector_base.py` - Async detector tests (10 tests)
+- `test_async_executor.py` - Async executor tests (30 tests)
+- `test_extended_modules.py` - Extended module tests (22 tests)
+
+Target: 80% coverage (GUI/Tray excluded due to hardware requirements)
 
 ## 🔧 Troubleshooting
 
