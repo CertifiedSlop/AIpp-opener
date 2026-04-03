@@ -23,7 +23,8 @@ keywords = [
     "nixos",
     "debian",
     "voice",
-    "gui"
+    "gui",
+    "certifiedslop"
 ]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -34,13 +35,10 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: POSIX :: Linux",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Topic :: Utilities",
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.12"
 dependencies = [
     "requests>=2.31.0",
     "fuzzywuzzy>=0.18.0",
@@ -53,6 +51,7 @@ dependencies = [
 
 [project.optional-dependencies]
 ai = [
+    "slop-common>=1.0.0",
     "openai>=1.12.0",
     "google-generativeai>=0.4.0",
 ]
@@ -76,23 +75,16 @@ notifications = [
     "notify-py>=0.3.42",
 ]
 all = [
-    "openai>=1.12.0",
-    "google-generativeai>=0.4.0",
-    "SpeechRecognition>=3.10.0",
-    "PyAudio>=0.2.13",
-    "pillow>=10.0.0",
-    "pystray>=0.19.5",
-    "pynput>=1.7.6",
-    "python-xlib>=0.33",
-    "notify-py>=0.3.42",
+    "aipp-opener[ai,voice,gui,keyboard,notifications]",
 ]
 dev = [
-    "pytest>=7.4.0",
+    "pytest>=8.0.0",
     "pytest-cov>=4.1.0",
-    "pytest-asyncio>=0.21.0",
-    "black>=23.0.0",
-    "ruff>=0.1.0",
-    "mypy>=1.5.0",
+    "pytest-asyncio>=0.23.0",
+    "pytest-mock>=3.12.0",
+    "black>=24.0.0",
+    "ruff>=0.2.0",
+    "mypy>=1.8.0",
 ]
 
 [project.urls]
@@ -119,12 +111,12 @@ aipp_opener = ["py.typed"]
 
 [tool.black]
 line-length = 100
-target-version = ['py38', 'py39', 'py310', 'py311', 'py312']
+target-version = ['py312']
 include = '\.pyi?$'
 
 [tool.ruff]
 line-length = 100
-target-version = "py39"
+target-version = "py312"
 select = [
     "E",  # pycodestyle errors
     "W",  # pycodestyle warnings
@@ -139,7 +131,7 @@ ignore = [
 ]
 
 [tool.mypy]
-python_version = "3.9"
+python_version = "3.12"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = false
